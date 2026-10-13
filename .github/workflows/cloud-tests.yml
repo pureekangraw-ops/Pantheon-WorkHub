@@ -62,3 +62,13 @@ jobs:
             --data '{"intent":"LIST_TASKS"}' \
             https://phatheon-workhub.pureekangraw.workers.dev/v1/intent)"
           test "$code" = "401"
+      - name: Verify production Factory service binding handshake
+        run: |
+          # The public /health endpoint reports only sanitized connectivity;
+          # read/write endpoints still require the WorkHub owner secret.
+          result="$(curl --silent --show-error --fail --max-time 20 https://phatheon-workhub.pureekangraw.workers.dev/health)"
+          echo "$result" | grep -F '"service":"pantheon-workhub"'
+          echo "$result" | grep -F '"connection":"CONNECTED"'
+          echo "$result" | grep -F '"service":"factory-district"'
+          echo "$result" | grep -F '"dispatch_enabled":false'
+
