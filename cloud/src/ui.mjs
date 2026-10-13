@@ -40,6 +40,7 @@ footer{padding:20px;text-align:center;color:#718b9a;font-size:12px}@media(max-wi
    const head=document.createElement("div");head.className="taskhead";
    const identity=document.createElement("span");identity.className="taskid";identity.textContent=item.task_id;
    const state=document.createElement("span");state.className="state";state.textContent=item.status;head.append(identity,state);row.append(head);
+   const description=document.createElement("p");description.className="request";description.textContent=item.request_text||"";row.append(description);
    const buttons=document.createElement("div");buttons.className="actions";
    const inspect=document.createElement("button");inspect.className="secondary";inspect.textContent="Inspect";inspect.onclick=()=>detail(item.task_id);
    buttons.append(inspect);
