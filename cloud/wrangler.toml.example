@@ -2,7 +2,7 @@
 # WORKHUB_TOKEN must be set as a Cloudflare secret, never committed.
 name = "pantheon-workhub-staging"
 main = "src/worker.mjs"
-compatibility_date = "2026-10-14"
+compatibility_date = "2026-10-13"
 workers_dev = true
 
 [[d1_databases]]
