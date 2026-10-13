@@ -20,6 +20,7 @@ footer{padding:20px;text-align:center;color:#718b9a;font-size:12px}@media(max-wi
 <div id="gate" class="panel"><h2>Connect to your workspace</h2><p class="muted">Enter your WorkHub access token. The token is kept in this page's memory only and is not saved in the browser.</p><label for="access">Access token</label><input id="access" type="password" autocomplete="off" placeholder="WorkHub access token"><div class="actions"><button id="connect">Connect</button></div></div>
 <div id="workspace" class="layout">
  <section><div class="panel"><h2>Create a task</h2><div class="muted">HERMES can propose this task. Creating it does not run an action.</div><label for="request">Task instruction</label><textarea id="request" placeholder="Describe a text artifact to create..."></textarea><div class="actions"><button id="create">Queue task</button><button id="signout" class="secondary">Disconnect</button></div></div>
+ <div class="panel"><h2>Factory District • connection</h2><p class="muted">Read-only connection check to the existing Factory Worker. Handoffs still require a scoped Work Pass, Factory rail credential and explicit approval; this page does not dispatch work.</p><button id="checkFactory" class="secondary">Check Factory</button><pre id="factoryState">Not checked</pre></div>
  <div class="panel"><h2>Verification detail</h2><pre id="details">Select a task to view its audit trail.</pre></div></section>
  <section><div class="panel"><div class="taskhead"><h2>Task queue</h2><span id="count" class="stat">0 tasks</span></div><button id="refresh" class="secondary">Refresh</button><div id="tasks"></div></div></section>
 </div><div id="notice" role="status" aria-live="polite"></div>
@@ -32,6 +33,7 @@ footer{padding:20px;text-align:center;color:#718b9a;font-size:12px}@media(max-wi
    const response=await fetch(path,{method,headers:{"authorization":"Bearer "+token,...(body===undefined?{}:{"content-type":"application/json"})},body:body===undefined?undefined:JSON.stringify(body)});
    const data=await response.json();if(!response.ok)throw new Error(data.error||"Request failed");return data;
  }
+ async function checkFactory(){const result=await api("/v1/factory/health",undefined,"GET");el("factoryState").textContent=JSON.stringify(result.factory,null,2);}
  async function load(){
   const result=await api("/v1/intent",{intent:"LIST_TASKS"});const tasks=el("tasks");tasks.replaceChildren();el("count").textContent=result.tasks.length+" tasks";
   if(!result.tasks.length){const p=document.createElement("p");p.className="muted";p.textContent="No tasks yet. Create one to begin.";tasks.append(p);}
@@ -55,9 +57,10 @@ footer{padding:20px;text-align:center;color:#718b9a;font-size:12px}@media(max-wi
    catch(err){notice(err.message)}
  }
  async function taskAction(taskId,action){try{const r=await api("/v1/tasks/"+taskId+"/"+action);notice(action+": "+r.status);await load();await detail(taskId)}catch(err){notice(err.message)}}
- el("connect").onclick=async()=>{token=el("access").value.trim();try{await load();el("access").value="";el("gate").style.display="none";el("workspace").style.display="grid";notice("Connected to WorkHub.")}catch(err){token="";notice(err.message)}};
+ el("connect").onclick=async()=>{token=el("access").value.trim();try{await load();el("access").value="";el("gate").style.display="none";el("workspace").style.display="grid";notice("Connected to WorkHub.");checkFactory().catch(err=>el("factoryState").textContent=err.message)}catch(err){token="";notice(err.message)}};
  el("signout").onclick=()=>{token="";el("workspace").style.display="none";el("gate").style.display="block";el("details").textContent="Select a task to view its audit trail.";notice("Disconnected.")};
  el("refresh").onclick=()=>load().catch(e=>notice(e.message));
+ el("checkFactory").onclick=()=>checkFactory().catch(e=>notice(e.message));
  el("create").onclick=async()=>{const request=el("request").value.trim();if(!request)return notice("Enter an instruction.");try{const r=await api("/v1/intent",{intent:"CREATE_TASK",request});el("request").value="";notice("Task queued: "+r.task_id);await load()}catch(err){notice(err.message)}};
 })();
 </script></body></html>`;
