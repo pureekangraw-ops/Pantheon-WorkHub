@@ -1,3 +1,4 @@
+import { dashboard } from "./ui.mjs";
 // Cloudflare staging runtime for Pantheon WorkHub. Model output never authorizes tool execution.
 const enc = new TextEncoder();
 const TIMING_WINDOW_MS = 60_000;
@@ -135,6 +136,7 @@ async function retry(db,taskId) {
 export default {
   async fetch(request,env) {
     const url=new URL(request.url),path=url.pathname;
+    if(path==="/" && request.method==="GET") return new Response(dashboard,{status:200,headers:{"content-type":"text/html; charset=utf-8","content-security-policy":"default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'none'","cache-control":"no-store","x-content-type-options":"nosniff","referrer-policy":"no-referrer"}});
     if(path==="/health" && request.method==="GET") return reply({ok:true,service:"pantheon-workhub",stage:"staging"});
     try {
       await authorize(request,env);
@@ -145,12 +147,18 @@ export default {
         if(intent.intent==="SHOW_TASK") return reply({task:await getTask(env.DB,intent.task_id)});
         return reply({tasks:(await stmt(env.DB,"SELECT task_id,status,created_at,updated_at FROM tasks ORDER BY created_at DESC LIMIT 100").all()).results});
       }
-      const match=path.match(/^\/v1\/tasks\/(task_[a-f0-9]{32})\/(run|recover|retry|events)$/);
+      const match=path.match(/^\/v1\/tasks\/(task_[a-f0-9]{32})\/(run|recover|retry|events|artifact)$/);
       if(match) {
         const [_,taskId,action]=match;
         if(action==="events" && request.method==="GET") {
           await getTask(env.DB,taskId);
           return reply({events:(await stmt(env.DB,"SELECT event_id,run_id,type,actor,details_json,created_at FROM events WHERE task_id=? ORDER BY rowid LIMIT 1000",taskId).all()).results});
+        }
+        if(action==="artifact" && request.method==="GET") {
+          const task=await getTask(env.DB,taskId),observed=await inspect(env.DB,taskId);
+          if(task.status!=="COMPLETED" || !observed.matches) return reply({artifact:null});
+          const value=await stmt(env.DB,"SELECT content,sha256 FROM artifacts WHERE action_key=?",observed.action_key).first();
+          return reply({artifact:value});
         }
         if(request.method!=="POST") throw new ApiError(405,"method not allowed");
         if(action==="run") return reply(await runTask(env.DB,taskId));
