@@ -1,0 +1,30 @@
+name: WorkHub Cloud checks
+on:
+  push:
+    branches:
+      - feat/cloud-local-parity-20261014
+    paths:
+      - "cloud/**"
+      - ".github/workflows/cloud-tests.yml"
+  pull_request:
+    paths:
+      - "cloud/**"
+      - ".github/workflows/cloud-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  node:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm run check
+        working-directory: cloud
+      - run: npm test
+        working-directory: cloud
