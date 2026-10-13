@@ -51,3 +51,14 @@ jobs:
         run: |
           node tests/smoke.mjs || { cat /tmp/workhub-wrangler.log; exit 1; }
         working-directory: cloud
+      - name: Verify deployed staging health and API authorization
+        run: |
+          curl --silent --show-error --fail --max-time 20 \
+            https://pantheon-workhub-staging.pureekangraw.workers.dev/health \
+            | grep -F '"ok":true'
+          code="$(curl --silent --show-error --max-time 20 \
+            -o /dev/null -w '%{http_code}' \
+            -X POST -H 'content-type: application/json' \
+            --data '{"intent":"LIST_TASKS"}' \
+            https://pantheon-workhub-staging.pureekangraw.workers.dev/v1/intent)"
+          test "$code" = "401"
