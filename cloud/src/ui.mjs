@@ -1,4 +1,4 @@
-export const dashboard = \`<!doctype html>
+export const dashboard = `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pantheon WorkHub — Staging</title>
 <style>
 :root{font-family:Inter,system-ui,-apple-system,sans-serif;background:#edf5fa;color:#142f4a}
@@ -59,4 +59,4 @@ footer{padding:20px;text-align:center;color:#718b9a;font-size:12px}@media(max-wi
  el("refresh").onclick=()=>load().catch(e=>notice(e.message));
  el("create").onclick=async()=>{const request=el("request").value.trim();if(!request)return notice("Enter an instruction.");try{const r=await api("/v1/intent",{intent:"CREATE_TASK",request});el("request").value="";notice("Task queued: "+r.task_id);await load()}catch(err){notice(err.message)}};
 })();
-</script></body></html>\`;
+</script></body></html>`;
