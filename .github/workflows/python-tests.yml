@@ -1,6 +1,9 @@
 name: WorkHub Python tests
 
 on:
+  push:
+    branches:
+      - feat/cloud-local-parity-20261014
   pull_request:
     paths:
       - "pantheon_workhub/**"
