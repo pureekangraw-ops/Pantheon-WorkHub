@@ -1,5 +1,5 @@
 import { dashboard } from "./ui.mjs";
-// Cloudflare staging runtime for Pantheon WorkHub. Model output never authorizes tool execution.
+// Cloudflare runtime for the existing Pantheon WorkHub Worker. Model output never authorizes tool execution.
 const enc = new TextEncoder();
 const TIMING_WINDOW_MS = 60_000;
 const id = (prefix) => prefix + "_" + crypto.randomUUID().replaceAll("-", "");
@@ -137,7 +137,7 @@ export default {
   async fetch(request,env) {
     const url=new URL(request.url),path=url.pathname;
     if(path==="/" && request.method==="GET") return new Response(dashboard,{status:200,headers:{"content-type":"text/html; charset=utf-8","content-security-policy":"default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'none'","cache-control":"no-store","x-content-type-options":"nosniff","referrer-policy":"no-referrer"}});
-    if(path==="/health" && request.method==="GET") return reply({ok:true,service:"pantheon-workhub",stage:"staging"});
+    if(path==="/health" && request.method==="GET") return reply({ok:true,service:"pantheon-workhub",stage:"primary-preview"});
     try {
       await authorize(request,env);
       if(!env.DB) throw new ApiError(503,"database not configured");
