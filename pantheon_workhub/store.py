@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 import uuid
 from contextlib import contextmanager
@@ -34,8 +35,21 @@ class StoreError(RuntimeError):
 
 class Store:
     def __init__(self, path: str | Path):
-        self.path = Path(path)
-        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self.path = Path(path).expanduser()
+        self.path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+        if os.name == "posix":
+            if self.path.parent.stat().st_mode & 0o077:
+                raise PermissionError("database directory must be private (owner-only permissions)")
+            if self.path.is_symlink():
+                raise PermissionError("database path must not be a symlink")
+            if not self.path.exists():
+                try:
+                    fd = os.open(self.path, os.O_CREAT | os.O_EXCL | os.O_RDWR, 0o600)
+                    os.close(fd)
+                except FileExistsError:
+                    pass
+            if self.path.stat().st_mode & 0o077:
+                raise PermissionError("database file must be private (owner-only permissions)")
         self.initialize()
 
     def _connect(self) -> sqlite3.Connection:

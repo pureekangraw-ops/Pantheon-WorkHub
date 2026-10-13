@@ -12,11 +12,11 @@ Requires Python 3.11+; no third-party dependencies.
 
 ```sh
 python -m unittest discover -s tests -v
-python -m pantheon_workhub --db .data/workhub.sqlite --workspace .data/workspace create --actor owner --request "first local artifact"
+python -m pantheon_workhub --db .data/pantheon-workhub/workhub.sqlite --workspace .data/pantheon-workhub/workspace create --actor owner --request "first local artifact"
 # copy task_id from output
-python -m pantheon_workhub --db .data/workhub.sqlite --workspace .data/workspace run TASK_ID --actor owner
-python -m pantheon_workhub --db .data/workhub.sqlite --workspace .data/workspace show TASK_ID
-python -m pantheon_workhub --db .data/workhub.sqlite --workspace .data/workspace events TASK_ID
+python -m pantheon_workhub --db .data/pantheon-workhub/workhub.sqlite --workspace .data/pantheon-workhub/workspace run TASK_ID --actor owner
+python -m pantheon_workhub --db .data/pantheon-workhub/workhub.sqlite --workspace .data/pantheon-workhub/workspace show TASK_ID
+python -m pantheon_workhub --db .data/pantheon-workhub/workhub.sqlite --workspace .data/pantheon-workhub/workspace events TASK_ID
 ```
 
 `pause`, `resume`, `cancel`, `recover`, and `retry` commands are also available. Pause/cancel are cooperative: a tool must call its supplied control checkpoint at safe points. A request arriving after the tool's atomic effect is too late to undo it; the engine records that fact and verifies the outcome instead of falsely reporting cancellation.
@@ -33,5 +33,7 @@ python -m pantheon_workhub --db .data/workhub.sqlite --workspace .data/workspace
 - One synchronous local worker; SQLite `BEGIN IMMEDIATE` prevents duplicate claims, but there is no background scheduler or lease expiry yet.
 - One create-only text-artifact tool; no UI, network API, authentication provider, AI/model integration, external connectors, arbitrary shell, or destructive tool.
 - `--actor` is an audit label, **not authentication**. Keep this prototype local; do not expose it to a network or use it for sensitive data.
+- On POSIX, the app requires owner-only permissions for the SQLite directory/file and workspace; artifacts are created owner-only. It fails closed rather than using a broadly accessible data directory.
+- The existing local AI is not connected yet. When integrated, it must return a constrained proposal; only the Operations Engine may invoke the allowlisted tool, and model output is never authorization.
 - The database is authoritative for HERMES task state only, not external systems.
 - Request text is stored locally; do not include credentials or secrets.

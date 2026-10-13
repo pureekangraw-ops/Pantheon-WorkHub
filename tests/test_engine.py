@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import sqlite3
 import tempfile
 import threading
@@ -169,6 +170,26 @@ class EngineTests(unittest.TestCase):
         with closing(sqlite3.connect(self.db)) as conn:
             count = conn.execute("SELECT COUNT(*) FROM runs WHERE task_id = ?", (task_id,)).fetchone()[0]
         self.assertEqual(count, 1)
+
+    @unittest.skipUnless(os.name == "posix", "POSIX permission bits required")
+    def test_database_workspace_and_artifacts_are_owner_only(self):
+        self.assertEqual(self.db.stat().st_mode & 0o077, 0)
+        self.assertEqual(self.workspace.stat().st_mode & 0o077, 0)
+        task_id = self.engine.create_task("private artifact", "owner")
+        self.assertEqual(self.engine.run_task(task_id, "owner")["status"], "COMPLETED")
+        action = self.store.get_action(task_id)
+        artifact = self.tool._path(task_id, action["action_key"])
+        self.assertEqual(artifact.stat().st_mode & 0o077, 0)
+
+    @unittest.skipUnless(os.name == "posix", "POSIX permission bits required")
+    def test_refuses_shared_database_or_workspace_directories(self):
+        shared = Path(self.temp.name) / "shared"
+        shared.mkdir(mode=0o755)
+        shared.chmod(0o755)
+        with self.assertRaises(PermissionError):
+            Store(shared / "unsafe.sqlite")
+        with self.assertRaises(PermissionError):
+            TextArtifactTool(shared)
 
 
 if __name__ == "__main__":

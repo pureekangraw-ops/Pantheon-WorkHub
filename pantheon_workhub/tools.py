@@ -21,8 +21,12 @@ class TextArtifactTool:
     name = "workspace.create_text_artifact"
 
     def __init__(self, workspace: str | Path):
-        self.workspace = Path(workspace).resolve()
-        self.workspace.mkdir(parents=True, exist_ok=True)
+        self.workspace = Path(workspace).expanduser().resolve()
+        if self.workspace == Path(self.workspace.anchor):
+            raise ValueError("workspace cannot be the filesystem root")
+        self.workspace.mkdir(parents=True, exist_ok=True, mode=0o700)
+        if os.name == "posix" and self.workspace.stat().st_mode & 0o077:
+            raise PermissionError("workspace must be private (owner-only permissions)")
 
     @staticmethod
     def sha256(data: bytes) -> str:
@@ -42,7 +46,7 @@ class TextArtifactTool:
         if control is not None:
             control.checkpoint()
         path = self._path(task_id, action_key)
-        path.parent.mkdir(parents=True, exist_ok=True)
+        path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
         data = content.encode("utf-8")
         if self.sha256(data) != expected_sha256:
             raise ValueError("input hash mismatch")

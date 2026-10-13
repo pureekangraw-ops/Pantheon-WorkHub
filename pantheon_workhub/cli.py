@@ -11,8 +11,8 @@ from .tools import TextArtifactTool
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="pantheon-workhub")
-    parser.add_argument("--db", default=".data/workhub.sqlite")
-    parser.add_argument("--workspace", default=".data/workspace")
+    parser.add_argument("--db", default=".data/pantheon-workhub/workhub.sqlite")
+    parser.add_argument("--workspace", default=".data/pantheon-workhub/workspace")
     sub = parser.add_subparsers(dest="command", required=True)
 
     create = sub.add_parser("create", help="create and queue a local artifact task")
