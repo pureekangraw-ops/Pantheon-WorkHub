@@ -8,3 +8,8 @@ workers_dev = true
 binding = "DB"
 database_name = "pantheon-workhub"
 database_id = "22b59dc3-e07c-4ae7-b5b1-2646d3e8a975"
+
+# Internal Worker-to-Worker call; only read-only /health and signed preflight are used.
+[[services]]
+binding = "FACTORY"
+service = "factory-district"
