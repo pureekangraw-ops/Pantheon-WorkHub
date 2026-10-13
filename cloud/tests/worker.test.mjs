@@ -82,6 +82,9 @@ test("untrusted intent only queues; explicit execution verifies artifact and eve
   assert.equal(run.data.verified,true);
   assert.equal(e.DB.db.prepare("SELECT count(*) AS n FROM artifacts").get().n,1);
   assert.equal((await api(e,"/v1/tasks/"+taskId+"/run",{method:"POST"})).status,409);
+  const artifact=(await api(e,"/v1/tasks/"+taskId+"/artifact", {method:"GET"})).data.artifact;
+  assert.equal(artifact.content,"build a useful artifact");
+  assert.match(artifact.sha256,/^[a-f0-9]{64}$/);
   const events=(await api(e,"/v1/tasks/"+taskId+"/events")).data.events;
   assert.ok(events.some(x=>x.type==="ACTION_REQUESTED"));
   assert.ok(events.some(x=>x.type==="VERIFICATION_PASSED"));
@@ -117,4 +120,15 @@ test("crash after effect: readback completes without inserting a second artifact
   const recovered=await api(e,"/v1/tasks/"+taskId+"/recover",{method:"POST"});
   assert.equal(recovered.data.status,"COMPLETED",JSON.stringify(recovered.data));
   assert.equal(e.DB.db.prepare("SELECT count(*) AS n FROM artifacts").get().n,1);
+});
+
+test("dashboard HTML is served publicly without exposing workspace data",async()=>{
+  const e=env();
+  const response=await worker.fetch(new Request("https://stage.example/"),e);
+  assert.equal(response.status,200);
+  assert.match(response.headers.get("content-security-policy"),/connect-src 'self'/);
+  const html=await response.text();
+  assert.match(html,/Work, with proof/);
+  assert.doesNotMatch(html,/\bWORKHUB_TOKEN\b/);
+  assert.equal((await api(e,"/v1/intent",{method:"POST",auth:false,body:{intent:"LIST_TASKS"}})).status,401);
 });
