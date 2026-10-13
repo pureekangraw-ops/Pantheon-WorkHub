@@ -1,4 +1,4 @@
--- Staging-only D1 schema. Do not apply to other applications' databases.
+-- Pantheon WorkHub dedicated D1 schema. Do not apply to other applications' databases.
 PRAGMA foreign_keys=ON;
 CREATE TABLE IF NOT EXISTS tasks (
  task_id TEXT PRIMARY KEY,
