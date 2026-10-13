@@ -1,0 +1,11 @@
+# Copy as cloud/wrangler.toml after provisioning an isolated staging D1.
+# WORKHUB_TOKEN must be set as a Cloudflare secret, never committed.
+name = "pantheon-workhub-staging"
+main = "src/worker.mjs"
+compatibility_date = "2026-10-14"
+workers_dev = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "pantheon-workhub-staging"
+database_id = "REPLACE_WITH_STAGING_D1_ID"
