@@ -4,6 +4,11 @@ import hashlib
 import os
 import re
 from pathlib import Path
+from typing import Protocol
+
+
+class Control(Protocol):
+    def checkpoint(self) -> None: ...
 
 
 class ArtifactConflict(RuntimeError):
@@ -11,7 +16,7 @@ class ArtifactConflict(RuntimeError):
 
 
 class TextArtifactTool:
-    """Create one deterministic artifact under a dedicated local workspace."""
+    """Create one deterministic artifact; control is checked before its side effect."""
 
     name = "workspace.create_text_artifact"
 
@@ -33,7 +38,9 @@ class TextArtifactTool:
             raise ValueError("artifact path escaped workspace")
         return path
 
-    def execute(self, task_id: str, action_key: str, content: str, expected_sha256: str) -> dict:
+    def execute(self, task_id, action_key, content, expected_sha256, control: Control | None = None) -> dict:
+        if control is not None:
+            control.checkpoint()
         path = self._path(task_id, action_key)
         path.parent.mkdir(parents=True, exist_ok=True)
         data = content.encode("utf-8")
@@ -52,7 +59,7 @@ class TextArtifactTool:
             os.fsync(handle.fileno())
         return {"path": str(path.relative_to(self.workspace)), "sha256": expected_sha256, "deduplicated": False}
 
-    def inspect(self, task_id: str, action_key: str, expected_sha256: str) -> dict:
+    def inspect(self, task_id, action_key, expected_sha256) -> dict:
         path = self._path(task_id, action_key)
         if not path.exists():
             return {"exists": False, "matches": False, "path": str(path.relative_to(self.workspace))}

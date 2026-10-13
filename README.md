@@ -1,10 +1,10 @@
-# Pantheon WorkHub — HERMES V1.2 vertical slice
+# Pantheon WorkHub — HERMES V1.2 local execution slice
 
-A local-only, standard-library prototype of the HERMES task lifecycle. It proves one safe path:
+A local-only, standard-library prototype proving this path:
 
-`create task → persist IDs/events → execute one local artifact tool → read back → verify → complete`
+`create → queue → claim → execute one local tool → read back → verify → complete`
 
-If the process stops after the tool changes the workspace but before the receipt is saved, recovery reads the artifact before deciding whether to complete or retry. It never blindly replays an uncertain side effect.
+The Operations Engine owns task state. Task IDs stay stable; every run gets a new Run ID; a same-task/same-tool/same-input action keeps its Action Key. Events are stored in SQLite and reject UPDATE/DELETE at the database layer.
 
 ## Run
 
@@ -13,30 +13,25 @@ Requires Python 3.11+; no third-party dependencies.
 ```sh
 python -m unittest discover -s tests -v
 python -m pantheon_workhub --db .data/workhub.sqlite --workspace .data/workspace create --actor owner --request "first local artifact"
-```
-
-The `create` command creates and runs a task. The returned `task_id` can be used with:
-
-```sh
+# copy task_id from output
+python -m pantheon_workhub --db .data/workhub.sqlite --workspace .data/workspace run TASK_ID --actor owner
 python -m pantheon_workhub --db .data/workhub.sqlite --workspace .data/workspace show TASK_ID
 python -m pantheon_workhub --db .data/workhub.sqlite --workspace .data/workspace events TASK_ID
-python -m pantheon_workhub --db .data/workhub.sqlite --workspace .data/workspace recover TASK_ID --actor owner
-python -m pantheon_workhub --db .data/workhub.sqlite --workspace .data/workspace retry TASK_ID --actor owner
 ```
 
-## Deliberate limits of this first slice
+`pause`, `resume`, `cancel`, `recover`, and `retry` commands are also available. Pause/cancel are cooperative: a tool must call its supplied control checkpoint at safe points. A request arriving after the tool's atomic effect is too late to undo it; the engine records that fact and verifies the outcome instead of falsely reporting cancellation.
 
-- One synchronous local worker and one create-only text-artifact tool.
-- No UI, background daemon, network API, authentication provider, AI/model integration, external connectors, arbitrary shell, or destructive tool.
+## Recovery behavior
+
+- The engine commits `ACTION_REQUESTED` before invoking the tool.
+- If the process stops with an uncertain action, `recover` reads the workspace artifact.
+- Matching output is read back and verified; absent output is reconciled to `FAILED`, `PAUSED`, or `CANCELLED` according to the pending command, then requires explicit retry/resume; conflicting output remains `NEEDS_RECONCILIATION`.
+- A tool that cannot reach a safe point must remain in a request-pending state; it must not claim PAUSED/CANCELLED.
+
+## Deliberate limits
+
+- One synchronous local worker; SQLite `BEGIN IMMEDIATE` prevents duplicate claims, but there is no background scheduler or lease expiry yet.
+- One create-only text-artifact tool; no UI, network API, authentication provider, AI/model integration, external connectors, arbitrary shell, or destructive tool.
 - `--actor` is an audit label, **not authentication**. Keep this prototype local; do not expose it to a network or use it for sensitive data.
-- Pause/cancel are not claimed as implemented: they need an interruptible worker and observable safe points to prove that a real process stopped.
-- The database is the source of truth for HERMES task state only. The prototype does not claim authority over external systems.
-
-## Safety properties in the slice
-
-- Task creation and its initial events are committed in one SQLite transaction before execution.
-- Task ID is stable; each execution attempt gets a new Run ID; Event IDs are unique. The Action Key is stable for the same task, tool, target, and input hash.
-- State changes and their events commit together. Event rows reject UPDATE/DELETE at the SQLite layer.
-- An `ACTION_REQUESTED` event is committed before the file write. A receipt and independent readback are required before `COMPLETED`.
-- If an effect is uncertain, the task enters `NEEDS_RECONCILIATION`. A matching artifact completes via readback; a missing artifact is marked `FAILED` and requires an explicit retry; a conflicting artifact remains unresolved.
-- This is a prototype, not a production security boundary. Request text is stored locally; do not include credentials or secrets.
+- The database is authoritative for HERMES task state only, not external systems.
+- Request text is stored locally; do not include credentials or secrets.

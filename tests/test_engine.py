@@ -2,11 +2,15 @@ from __future__ import annotations
 
 import sqlite3
 import tempfile
+import threading
+import time
 import unittest
+from contextlib import closing
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from pantheon_workhub.engine import OperationsEngine
-from pantheon_workhub.store import Store
+from pantheon_workhub.engine import OperationsEngine, PauseRequested
+from pantheon_workhub.store import Store, StoreError
 from pantheon_workhub.tools import TextArtifactTool
 
 
@@ -15,14 +19,26 @@ class SimulatedProcessCrash(BaseException):
 
 
 class CrashAfterWriteTool(TextArtifactTool):
-    def execute(self, task_id, action_key, content, expected_sha256):
-        receipt = super().execute(task_id, action_key, content, expected_sha256)
+    def execute(self, task_id, action_key, content, expected_sha256, control=None):
+        receipt = super().execute(task_id, action_key, content, expected_sha256, control)
         raise SimulatedProcessCrash("simulated process loss after effect, before receipt")
 
 
 class FailBeforeWriteTool(TextArtifactTool):
-    def execute(self, task_id, action_key, content, expected_sha256):
+    def execute(self, task_id, action_key, content, expected_sha256, control=None):
         raise RuntimeError("simulated tool timeout before local effect")
+
+
+class WaitingTool(TextArtifactTool):
+    def __init__(self, workspace):
+        super().__init__(workspace)
+        self.entered = threading.Event()
+
+    def execute(self, task_id, action_key, content, expected_sha256, control=None):
+        self.entered.set()
+        while True:
+            control.checkpoint()
+            time.sleep(0.005)
 
 
 class EngineTests(unittest.TestCase):
@@ -49,8 +65,7 @@ class EngineTests(unittest.TestCase):
         self.assertIn("VERIFICATION_PASSED", types)
         self.assertEqual(types[-2:], ["TASK_COMPLETED", "RUN_FINISHED"])
         action = self.store.get_action(task_id)
-        observed = self.tool.inspect(task_id, action["action_key"], action["input_sha256"])
-        self.assertTrue(observed["matches"])
+        self.assertTrue(self.tool.inspect(task_id, action["action_key"], action["input_sha256"])["matches"])
 
     def test_crash_after_effect_recovers_without_repeating_side_effect(self):
         crashing = OperationsEngine(self.store, CrashAfterWriteTool(self.workspace))
@@ -77,7 +92,7 @@ class EngineTests(unittest.TestCase):
         task = self.engine.retry_task(task_id, "owner")
         self.assertEqual(task["status"], "COMPLETED")
         self.assertEqual(self.store.get_action(task_id)["action_key"], action_key)
-        with sqlite3.connect(self.db) as conn:
+        with closing(sqlite3.connect(self.db)) as conn:
             runs = conn.execute("SELECT run_id FROM runs WHERE task_id = ? ORDER BY ordinal", (task_id,)).fetchall()
         self.assertEqual(len(runs), 2)
         self.assertNotEqual(runs[0][0], runs[1][0])
@@ -94,11 +109,66 @@ class EngineTests(unittest.TestCase):
 
     def test_event_rows_are_append_only(self):
         task_id = self.engine.create_task("audit me", "owner")
-        with sqlite3.connect(self.db) as conn:
+        with closing(sqlite3.connect(self.db)) as conn:
             with self.assertRaises(sqlite3.DatabaseError):
                 conn.execute("UPDATE events SET event_type = 'TAMPERED' WHERE task_id = ?", (task_id,))
             with self.assertRaises(sqlite3.DatabaseError):
                 conn.execute("DELETE FROM events WHERE task_id = ?", (task_id,))
+
+    def test_pause_at_safe_point_then_resume_with_new_run(self):
+        waiting = WaitingTool(self.workspace)
+        waiting_engine = OperationsEngine(self.store, waiting)
+        task_id = waiting_engine.create_task("pause me", "owner")
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            future = pool.submit(waiting_engine.run_task, task_id, "runner")
+            self.assertTrue(waiting.entered.wait(2))
+            task = waiting_engine.request_pause(task_id, "owner")
+            self.assertEqual(task["status"], "PAUSE_REQUESTED")
+            self.assertEqual(future.result(timeout=2)["status"], "PAUSED")
+        action_key = self.store.get_action(task_id)["action_key"]
+        task = self.engine.resume_task(task_id, "owner")
+        self.assertEqual(task["status"], "COMPLETED")
+        self.assertEqual(self.store.get_action(task_id)["action_key"], action_key)
+        with closing(sqlite3.connect(self.db)) as conn:
+            run_ids = conn.execute("SELECT run_id FROM runs WHERE task_id = ? ORDER BY ordinal", (task_id,)).fetchall()
+        self.assertEqual(len(run_ids), 2)
+        self.assertNotEqual(run_ids[0][0], run_ids[1][0])
+
+    def test_cancel_at_safe_point_prevents_effect(self):
+        waiting = WaitingTool(self.workspace)
+        waiting_engine = OperationsEngine(self.store, waiting)
+        task_id = waiting_engine.create_task("cancel me", "owner")
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            future = pool.submit(waiting_engine.run_task, task_id, "runner")
+            self.assertTrue(waiting.entered.wait(2))
+            task = waiting_engine.request_cancel(task_id, "owner")
+            self.assertEqual(task["status"], "CANCEL_REQUESTED")
+            self.assertEqual(future.result(timeout=2)["status"], "CANCELLED")
+        action = self.store.get_action(task_id)
+        observed = self.tool.inspect(task_id, action["action_key"], action["input_sha256"])
+        self.assertFalse(observed["exists"])
+
+    def test_queued_pause_and_cancel_are_immediate_and_logged(self):
+        pause_id = self.engine.create_task("pause queued", "owner")
+        self.assertEqual(self.engine.request_pause(pause_id, "owner")["status"], "PAUSED")
+        self.assertEqual(self.engine.resume_task(pause_id, "owner")["status"], "COMPLETED")
+        cancel_id = self.engine.create_task("cancel queued", "owner")
+        self.assertEqual(self.engine.request_cancel(cancel_id, "owner")["status"], "CANCELLED")
+        self.assertIn("TASK_CANCELLED", [event["event_type"] for event in self.store.events(cancel_id)])
+
+    def test_atomic_claim_allows_only_one_run(self):
+        task_id = self.engine.create_task("single claim", "owner")
+        def claim():
+            try:
+                return self.store.begin_run(task_id, "worker")
+            except StoreError:
+                return None
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            results = list(pool.map(lambda _: claim(), range(2)))
+        self.assertEqual(sum(result is not None for result in results), 1)
+        with closing(sqlite3.connect(self.db)) as conn:
+            count = conn.execute("SELECT COUNT(*) FROM runs WHERE task_id = ?", (task_id,)).fetchone()[0]
+        self.assertEqual(count, 1)
 
 
 if __name__ == "__main__":
