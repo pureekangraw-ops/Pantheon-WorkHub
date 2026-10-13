@@ -1,10 +1,10 @@
-# Isolated staging only. Never point this config at the existing phatheon-workhub Worker.
-name = "pantheon-workhub-staging"
+# Pantheon WorkHub single main Worker. Original Hello-world source is backed up in cloud/backups.
+name = "phatheon-workhub"
 main = "src/worker.mjs"
 compatibility_date = "2026-10-13"
 workers_dev = true
 
 [[d1_databases]]
 binding = "DB"
-database_name = "pantheon-workhub-staging"
-database_id = "aea1361a-792f-4fa4-b60e-91c7e7493570"
+database_name = "pantheon-workhub"
+database_id = "22b59dc3-e07c-4ae7-b5b1-2646d3e8a975"
