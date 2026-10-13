@@ -34,4 +34,16 @@ assert.equal(artifactAfter.value.artifact.content,"Cloudflare D1 verified artifa
 const events=await request("/v1/tasks/"+taskId+"/events",undefined,"GET");
 assert.ok(events.value.events.some(e=>e.type==="VERIFICATION_PASSED"));
 assert.ok(events.value.events.some(e=>e.type==="TASK_COMPLETED"));
-console.log(JSON.stringify({test:"WorkHub real Workers/D1 e2e",task_id:taskId,status:"VERIFIED",events:events.value.events.length}));
+// Parallel claims must never both execute the same action.
+const concurrent=await request("/v1/intent",{intent:"CREATE_TASK",request:"single side effect under concurrency"});
+assert.equal(concurrent.status,201);
+const duplicateId=concurrent.value.task_id;
+const [first,second]=await Promise.all([
+ request("/v1/tasks/"+duplicateId+"/run"),
+ request("/v1/tasks/"+duplicateId+"/run")
+]);
+assert.deepEqual([first.status,second.status].sort((a,b)=>a-b),[200,409],
+ JSON.stringify([first,second]));
+const verified=await request("/v1/tasks/"+duplicateId+"/artifact",undefined,"GET");
+assert.equal(verified.value.artifact.content,"single side effect under concurrency");
+console.log(JSON.stringify({test:"WorkHub real Workers/D1 e2e",task_id:taskId,status:"VERIFIED",events:events.value.events.length,parallel_claims:"one-winner"}));
