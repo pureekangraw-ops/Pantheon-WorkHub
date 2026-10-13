@@ -3,6 +3,7 @@ name = "phatheon-workhub"
 main = "src/worker.mjs"
 compatibility_date = "2026-10-13"
 workers_dev = true
+preview_urls = false
 
 [[d1_databases]]
 binding = "DB"
