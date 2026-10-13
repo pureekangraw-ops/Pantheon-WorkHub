@@ -1,0 +1,9 @@
+[project]
+name = "pantheon-workhub"
+version = "0.1.0"
+description = "Local-first HERMES task lifecycle vertical slice"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+pantheon-workhub = "pantheon_workhub.cli:main"
