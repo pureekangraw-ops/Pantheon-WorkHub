@@ -7,3 +7,8 @@ dependencies = []
 
 [project.scripts]
 pantheon-workhub = "pantheon_workhub.cli:main"
+
+# Explicitly package only the local Python engine. The sibling cloud/ folder
+# contains the Cloudflare Worker, not an importable Python distribution.
+[tool.setuptools]
+packages = ["pantheon_workhub"]
