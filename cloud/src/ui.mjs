@@ -1,5 +1,5 @@
 export const dashboard = `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pantheon WorkHub — Staging</title>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pantheon WorkHub — Preview</title>
 <style>
 :root{font-family:Inter,system-ui,-apple-system,sans-serif;background:#edf5fa;color:#142f4a}
 *{box-sizing:border-box}body{margin:0}button,input,textarea{font:inherit}button{cursor:pointer;border:0;border-radius:11px;padding:10px 16px;background:#125eaa;color:#fff;font-weight:650}button:hover{background:#0b477f}button:disabled{opacity:.5;cursor:not-allowed}
@@ -15,15 +15,15 @@ pre{font-size:12px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere;b
 .stat{font-size:12px;font-weight:600;color:#55758d}#gate{display:block}#workspace{display:none}
 footer{padding:20px;text-align:center;color:#718b9a;font-size:12px}@media(max-width:760px){.layout{grid-template-columns:1fr}main{margin-top:24px}header{padding:16px 20px}}
 </style></head><body>
-<header><strong>✦ Pantheon <span style="color:#217fbe">WorkHub</span></strong><span class="tag">STAGING ENVIRONMENT</span></header>
-<main><div class="headline"><h1>Work, with proof.</h1><div class="muted">Queue instructions, explicitly run a safe artifact tool, and verify each result. This staging environment does not invoke external tools or AI automatically.</div></div>
-<div id="gate" class="panel"><h2>Connect to your workspace</h2><p class="muted">Enter your staging access token. The token is kept in this page's memory only and is not saved in the browser.</p><label for="access">Access token</label><input id="access" type="password" autocomplete="off" placeholder="Staging access token"><div class="actions"><button id="connect">Connect</button></div></div>
+<header><strong>✦ Pantheon <span style="color:#217fbe">WorkHub</span></strong><span class="tag">WORKSPACE PREVIEW</span></header>
+<main><div class="headline"><h1>Work, with proof.</h1><div class="muted">Queue instructions, explicitly run a safe artifact tool, and verify each result. This preview does not invoke external tools or AI automatically.</div></div>
+<div id="gate" class="panel"><h2>Connect to your workspace</h2><p class="muted">Enter your WorkHub access token. The token is kept in this page's memory only and is not saved in the browser.</p><label for="access">Access token</label><input id="access" type="password" autocomplete="off" placeholder="WorkHub access token"><div class="actions"><button id="connect">Connect</button></div></div>
 <div id="workspace" class="layout">
  <section><div class="panel"><h2>Create a task</h2><div class="muted">HERMES can propose this task. Creating it does not run an action.</div><label for="request">Task instruction</label><textarea id="request" placeholder="Describe a text artifact to create..."></textarea><div class="actions"><button id="create">Queue task</button><button id="signout" class="secondary">Disconnect</button></div></div>
  <div class="panel"><h2>Verification detail</h2><pre id="details">Select a task to view its audit trail.</pre></div></section>
  <section><div class="panel"><div class="taskhead"><h2>Task queue</h2><span id="count" class="stat">0 tasks</span></div><button id="refresh" class="secondary">Refresh</button><div id="tasks"></div></div></section>
 </div><div id="notice" role="status" aria-live="polite"></div>
-</main><footer>Pantheon WorkHub • isolated Cloudflare staging • no production tools</footer>
+</main><footer>Pantheon WorkHub • Cloudflare WorkHub • safe artifact execution only</footer>
 <script>
 (() => {
  const el=id=>document.getElementById(id); let token="";
@@ -44,7 +44,7 @@ footer{padding:20px;text-align:center;color:#718b9a;font-size:12px}@media(max-wi
    const buttons=document.createElement("div");buttons.className="actions";
    const inspect=document.createElement("button");inspect.className="secondary";inspect.textContent="Inspect";inspect.onclick=()=>detail(item.task_id);
    buttons.append(inspect);
-   if(item.status==="QUEUED"){const run=document.createElement("button");run.textContent="Run verified artifact";run.onclick=async()=>{if(!confirm("Run the staging text-artifact tool for this task?"))return;await taskAction(item.task_id,"run")};buttons.append(run);}
+   if(item.status==="QUEUED"){const run=document.createElement("button");run.textContent="Run verified artifact";run.onclick=async()=>{if(!confirm("Run the safe text-artifact tool for this task?"))return;await taskAction(item.task_id,"run")};buttons.append(run);}
    if(item.status==="NEEDS_RECONCILIATION"||item.status==="RUNNING"){const recover=document.createElement("button");recover.className="secondary";recover.textContent="Recover";recover.onclick=()=>taskAction(item.task_id,"recover");buttons.append(recover);}
    if(item.status==="FAILED"){const retry=document.createElement("button");retry.className="secondary";retry.textContent="Queue retry";retry.onclick=()=>taskAction(item.task_id,"retry");buttons.append(retry);}
    row.append(buttons);tasks.append(row);
@@ -55,7 +55,7 @@ footer{padding:20px;text-align:center;color:#718b9a;font-size:12px}@media(max-wi
    catch(err){notice(err.message)}
  }
  async function taskAction(taskId,action){try{const r=await api("/v1/tasks/"+taskId+"/"+action);notice(action+": "+r.status);await load();await detail(taskId)}catch(err){notice(err.message)}}
- el("connect").onclick=async()=>{token=el("access").value.trim();try{await load();el("access").value="";el("gate").style.display="none";el("workspace").style.display="grid";notice("Connected to staging workspace.")}catch(err){token="";notice(err.message)}};
+ el("connect").onclick=async()=>{token=el("access").value.trim();try{await load();el("access").value="";el("gate").style.display="none";el("workspace").style.display="grid";notice("Connected to WorkHub.")}catch(err){token="";notice(err.message)}};
  el("signout").onclick=()=>{token="";el("workspace").style.display="none";el("gate").style.display="block";el("details").textContent="Select a task to view its audit trail.";notice("Disconnected.")};
  el("refresh").onclick=()=>load().catch(e=>notice(e.message));
  el("create").onclick=async()=>{const request=el("request").value.trim();if(!request)return notice("Enter an instruction.");try{const r=await api("/v1/intent",{intent:"CREATE_TASK",request});el("request").value="";notice("Task queued: "+r.task_id);await load()}catch(err){notice(err.message)}};
