@@ -145,7 +145,7 @@ export default {
         const intent=parseIntent(await bodyJson(request));
         if(intent.intent==="CREATE_TASK") return reply(await queue(env.DB,intent.request),201);
         if(intent.intent==="SHOW_TASK") return reply({task:await getTask(env.DB,intent.task_id)});
-        return reply({tasks:(await stmt(env.DB,"SELECT task_id,status,created_at,updated_at FROM tasks ORDER BY created_at DESC LIMIT 100").all()).results});
+        return reply({tasks:(await stmt(env.DB,"SELECT task_id,status,request_text,created_at,updated_at FROM tasks ORDER BY created_at DESC LIMIT 100").all()).results});
       }
       const match=path.match(/^\/v1\/tasks\/(task_[a-f0-9]{32})\/(run|recover|retry|events|artifact)$/);
       if(match) {
