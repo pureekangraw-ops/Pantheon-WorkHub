@@ -1,4 +1,5 @@
 import { dashboard } from "./ui.mjs";
+import {factoryHealth, factoryPreflight, FactoryBridgeError} from "./factory-bridge.mjs";
 // Cloudflare runtime for the existing Pantheon WorkHub Worker. Model output never authorizes tool execution.
 const enc = new TextEncoder();
 const TIMING_WINDOW_MS = 60_000;
@@ -137,10 +138,14 @@ export default {
   async fetch(request,env) {
     const url=new URL(request.url),path=url.pathname;
     if(path==="/" && request.method==="GET") return new Response(dashboard,{status:200,headers:{"content-type":"text/html; charset=utf-8","content-security-policy":"default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'none'","cache-control":"no-store","x-content-type-options":"nosniff","referrer-policy":"no-referrer"}});
-    if(path==="/health" && request.method==="GET") return reply({ok:true,service:"pantheon-workhub",stage:"primary-preview"});
+    if(path==="/health" && request.method==="GET") return reply({ok:true,service:"pantheon-workhub",stage:"primary-preview",factory:await factoryHealth(env)});
     try {
       await authorize(request,env);
       if(!env.DB) throw new ApiError(503,"database not configured");
+      if(path==="/v1/factory/health" && request.method==="GET") return reply({factory:await factoryHealth(env)});
+      if(path==="/v1/factory/preflight" && request.method==="POST") return reply({factory:await factoryPreflight(env,await bodyJson(request))});
+      // Sending work to /station/receive is intentionally unavailable: signed preflight
+      // never constitutes City Hall authorization or approval to dispatch.
       if(path==="/v1/intent" && request.method==="POST") {
         const intent=parseIntent(await bodyJson(request));
         if(intent.intent==="CREATE_TASK") return reply(await queue(env.DB,intent.request),201);
@@ -167,7 +172,7 @@ export default {
       }
       throw new ApiError(404,"not found");
     } catch(error) {
-      return reply({error:error instanceof ApiError?error.message:"internal error"},error instanceof ApiError?error.status:500);
+      return reply({error:error instanceof ApiError || error instanceof FactoryBridgeError?error.message:"internal error"},error instanceof ApiError || error instanceof FactoryBridgeError?error.status:500);
     }
   }
 };
