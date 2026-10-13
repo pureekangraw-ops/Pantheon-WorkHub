@@ -28,3 +28,26 @@ jobs:
         working-directory: cloud
       - run: npm test
         working-directory: cloud
+      - name: Install Wrangler for actual Workers and D1 E2E
+        run: npm install --no-save wrangler@4
+        working-directory: cloud
+      - name: Initialize isolated local D1
+        run: npx wrangler d1 execute pantheon-workhub-staging --local --file=schema.sql
+        working-directory: cloud
+      - name: Start local Cloudflare runtime
+        run: |
+          SECRET="$(openssl rand -hex 32)"
+          printf 'WORKHUB_TOKEN=%s\n' "$SECRET" > .dev.vars
+          printf 'SMOKE_TOKEN=%s\n' "$SECRET" >> "$GITHUB_ENV"
+          nohup npx wrangler dev --local --ip 127.0.0.1 --port 8789 > /tmp/workhub-wrangler.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl --silent --fail http://127.0.0.1:8789/health > /dev/null; then exit 0; fi
+            sleep 2
+          done
+          cat /tmp/workhub-wrangler.log
+          exit 1
+        working-directory: cloud
+      - name: Run real Workers and D1 smoke E2E
+        run: |
+          node tests/smoke.mjs || { cat /tmp/workhub-wrangler.log; exit 1; }
+        working-directory: cloud
