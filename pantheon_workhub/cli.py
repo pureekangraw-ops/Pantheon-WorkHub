@@ -4,6 +4,7 @@ import argparse
 import json
 import sys
 
+from .dispatcher import dispatch_intent
 from .engine import OperationsEngine
 from .store import Store
 from .tools import TextArtifactTool
@@ -18,6 +19,10 @@ def main(argv: list[str] | None = None) -> int:
     create = sub.add_parser("create", help="create and run a local artifact task")
     create.add_argument("--request", required=True)
     create.add_argument("--actor", required=True)
+
+    intent = sub.add_parser("intent", help="validate HERMES JSON and queue/read tasks; never auto-executes")
+    intent.add_argument("--json", required=True, help="raw JSON intent from an untrusted model")
+    intent.add_argument("--actor", required=True, help="trusted local caller audit label")
 
     retry = sub.add_parser("retry", help="retry only after recovery confirmed no effect")
     retry.add_argument("task_id")
@@ -40,6 +45,8 @@ def main(argv: list[str] | None = None) -> int:
             task_id = engine.create_task(args.request, args.actor)
             result = engine.run_task(task_id, args.actor)
             print(json.dumps(result, indent=2, sort_keys=True))
+        elif args.command == "intent":
+            print(json.dumps(dispatch_intent(engine, args.json, args.actor), indent=2, sort_keys=True))
         elif args.command == "retry":
             print(json.dumps(engine.retry_task(args.task_id, args.actor), indent=2, sort_keys=True))
         elif args.command == "recover":
