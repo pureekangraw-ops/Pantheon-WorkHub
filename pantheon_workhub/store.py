@@ -361,3 +361,10 @@ class Store:
                 item["details"] = json.loads(item.pop("details_json"))
                 result.append(item)
             return result
+
+    def list_tasks(self, limit: int = 100) -> list[dict[str, Any]]:
+        if not isinstance(limit, int) or isinstance(limit, bool) or not 1 <= limit <= 100:
+            raise ValueError('limit must be between 1 and 100')
+        with self._connect() as conn:
+            rows = conn.execute('SELECT * FROM tasks ORDER BY created_at DESC, task_id DESC LIMIT ?', (limit,)).fetchall()
+            return [dict(row) for row in rows]
