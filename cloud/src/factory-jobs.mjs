@@ -1,5 +1,5 @@
 // Owner-authorized, LOGIC-trainee-only dispatch. Model output alone never executes.
-import {factoryPreflight,factoryDispatch,factoryReadback,FactoryBridgeError} from "./factory-bridge.mjs";
+import {factoryPreflight,factoryDispatch,factoryReadback,factoryReconcile,FactoryBridgeError} from "./factory-bridge.mjs";
 const enc=new TextEncoder();
 const stamp=()=>new Date().toISOString();
 const uid=(x)=>x+"_"+crypto.randomUUID().replaceAll("-","");
@@ -94,13 +94,31 @@ export async function dispatchFactoryJob(db,env,taskId,{reconcile=false}={}){
  try{
   // A stored receipt takes priority: reconcile by readback without re-running any effect.
   if(j.receipt_id){
-   const back=await factoryReadback(env,j.receipt_id);
+   let back;
+   try { back=await factoryReadback(env,j.receipt_id); }
+   catch(error){
+    if(error.message!=="RECEIPT_NOT_FOUND")throw error;
+    const recovered=await factoryReconcile(env,envelope(j));
+    if(recovered.receipt.receiptId!==j.receipt_id)
+      throw new FactoryBridgeError(502,"recovered receipt mismatch");
+    await audit(db,taskId,"FACTORY_RECEIPT_RECOVERED",{receipt_id:j.receipt_id});
+    back=await factoryReadback(env,j.receipt_id);
+   }
    return await settle(db,j,back,j.receipt_id);
   }
   const data=envelope(j);
   const preflight=await factoryPreflight(env,data);
   await audit(db,taskId,"FACTORY_PREFLIGHT_VERIFIED",{source_sha:preflight.sourceSha||null});
-  const dispatched=await factoryDispatch(env,data);
+  // On uncertain sends consult durable Factory claim and evidence first;
+  // absence of a durable claim means the machine was never invoked.
+  let dispatched;
+  if(reconcile){
+   try {dispatched=await factoryReconcile(env,data);}
+   catch(error){
+    if(error.message!=="FACTORY_CLAIM_NOT_FOUND")throw error;
+   }
+  }
+  if(!dispatched)dispatched=await factoryDispatch(env,data);
   const receipt=dispatched.receipt.receiptId;
   // Persist receipt before further network calls, so subsequent reconciliations
   // can query the Factory without resending work.
