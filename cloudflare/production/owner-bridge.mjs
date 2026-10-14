@@ -4,7 +4,7 @@ const fail=(status,upstream_status=400)=>({ok:false,status,upstream_status});
 const task=v=>typeof v==='string'&&/^task_[a-f0-9]{32}$/.test(v);
 const keys=(v,allowed)=>v&&typeof v==='object'&&!Array.isArray(v)&&Object.keys(v).every(k=>allowed.includes(k));
 export async function ownerBridgeCall(env,workhub,a){
- if(!keys(a,['operation','payload','request','task_id','approved']))return fail('INVALID_BRIDGE_REQUEST');
+ if(!keys(a,['operation','payload','request','task_id','approved','view']))return fail('INVALID_BRIDGE_REQUEST');
  let path,method='POST',payload;
  switch(a.operation){
  case 'intent':
@@ -18,6 +18,9 @@ export async function ownerBridgeCall(env,workhub,a){
  case 'queue_factory':
   if(!keys(a,['operation','request'])||typeof a.request!=='string'||!a.request.trim()||a.request.length>4000)return fail('INVALID_REQUEST');
   path='/v1/factory/jobs';payload={request:a.request};break;
+ case 'observatory_latest':
+  if(!keys(a,['operation','view'])||Object.keys(a).length!==2||!['browser','map'].includes(a.view))return fail('INVALID_VIEW');
+  path='/v1/observatory/latest?view='+encodeURIComponent(a.view);method='GET';break;
  case 'factory_health':
   if(Object.keys(a).length!==1)return fail('INVALID_BRIDGE_REQUEST');
   path='/v1/factory/health';method='GET';break;
