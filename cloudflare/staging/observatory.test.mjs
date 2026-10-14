@@ -35,7 +35,7 @@ test("pure snapshot constraints",()=>{
   assert.throws(()=>validateCapture("background",snapshot,at),/INVALID_VIEW/);
 });
 
-test("one-time scoped pairing, 5s stream, 30s expiry, stop and revoke", async()=>{
+test("one-time scoped pairing, owner-manual captures, 30s expiry, stop and revoke", async()=>{
   const realNow=Date.now;
   let clock=1_800_000_000_000;
   Date.now=()=>clock;
@@ -46,6 +46,8 @@ test("one-time scoped pairing, 5s stream, 30s expiry, stop and revoke", async()=
     const paired=await exchange(post("/v1/observatory/pair",{consent:true,label:"phone"},ownerToken),env);
     assert.equal(paired.status,201);
     assert.equal(paired.body.scope,"observatory:observe-only");
+    assert.equal(paired.body.captureMode,"owner-manual");
+    assert.equal(Object.hasOwn(paired.body,"intervalMs"),false);
     assert.equal(paired.body.deviceToken.length,64);
     const secret=paired.body.deviceToken;
     const b=(captureId,epoch,sequence)=>({view:"browser",snapshot:{captureId,epoch,sequence,capturedAtEpochMs:clock,url:"https://example.com",text:"Read-only data"}});
