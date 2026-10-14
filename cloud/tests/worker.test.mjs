@@ -134,8 +134,8 @@ test("dashboard HTML is served publicly without exposing workspace data",async()
 });
 
 const PANTHEON_SECRET="pantheon-integration-test-secret-".repeat(3);
-function factoryBinding({loseFirstReceipt=false,verified=true}={}){
- const receipts=new Map();let dispatches=0,connections=0,firstLost=loseFirstReceipt;
+function factoryBinding({loseFirstReceipt=false,verified=true,receiptMissing=false}={}){
+ const receipts=new Map();let dispatches=0,connections=0,firstLost=loseFirstReceipt,receiptReady=!receiptMissing;
  const binding={async fetch(request){
    connections++;
    const path=new URL(request.url).pathname;
@@ -165,9 +165,16 @@ function factoryBinding({loseFirstReceipt=false,verified=true}={}){
     if(firstLost){firstLost=false;throw new Error("network response lost after Factory effect")}
     return new Response(JSON.stringify(record),{status:202});
    }
+   if(path==="/station/reconcile"){
+     const original=JSON.parse(body);
+     const record=receipts.get(original.workId);
+     if(!record)return new Response(JSON.stringify({status:"UNKNOWN",reason:"FACTORY_CLAIM_NOT_FOUND"}),{status:409});
+     receiptReady=true;
+     return new Response(JSON.stringify({status:"RECOVERED",receipt:record.receipt,readback:record.readback,recovered:true}),{status:200});
+   }
    if(path.startsWith("/station/readback/")){
      const record=[...receipts.values()].find(v=>v.receipt.receiptId===path.split("/").at(-1));
-     return new Response(JSON.stringify(record?.readback||{status:"UNKNOWN",reason:"RECEIPT_NOT_FOUND"}),{status:record?200:404});
+     return new Response(JSON.stringify(receiptReady&&record?record.readback:{status:"UNKNOWN",reason:"RECEIPT_NOT_FOUND"}),{status:receiptReady&&record?200:404});
    }
    throw new Error("Unexpected Factory route "+path);
  }};
@@ -228,4 +235,23 @@ test("temporary Factory-only smoke credential cannot access existing owner APIs"
  assert.equal((await route("/v1/factory/jobs/"+q.data.task_id,"GET")).status,200);
  assert.equal((await route("/v1/tasks/"+q.data.task_id+"/run")).status,401);
  assert.equal((await route("/v1/factory/jobs/"+q.data.task_id+"/dispatch")).status,503);
+});
+
+test("Factory missing receipt is rebuilt through signed evidence-only reconciliation",async()=>{
+ const f=factoryBinding({receiptMissing:true}),e={...env(),FACTORY_PANTHEON_SECRET:PANTHEON_SECRET,FACTORY:f.binding};
+ const q=await api(e,"/v1/factory/jobs",{method:"POST",body:{request:"receipt lost after executed LOGIC trainee placement"}});
+ const taskId=q.data.task_id;
+ const first=await api(e,"/v1/factory/jobs/"+taskId+"/dispatch",{method:"POST"});
+ assert.equal(first.status,502);
+ assert.equal(f.dispatches,1);
+ const saved=(await api(e,"/v1/factory/jobs/"+taskId)).data.job;
+ assert.ok(saved.receipt_id);
+ assert.equal(saved.status,"NEEDS_RECONCILIATION");
+ const recovered=await api(e,"/v1/factory/jobs/"+taskId+"/reconcile",{method:"POST"});
+ assert.equal(recovered.status,200,JSON.stringify(recovered));
+ assert.equal(recovered.data.status,"COMPLETED");
+ assert.equal(recovered.data.verified,true);
+ assert.equal(f.dispatches,1);
+ const events=(await api(e,"/v1/tasks/"+taskId+"/events")).data.events;
+ assert.ok(events.some(x=>x.type==="FACTORY_RECEIPT_RECOVERED"));
 });
