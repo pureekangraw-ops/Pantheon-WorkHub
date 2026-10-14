@@ -22,7 +22,7 @@ async function route(request,env){
     const deviceId="obs_"+crypto.randomUUID().replaceAll("-",""),deviceToken=createDeviceToken();
     await env.DB.prepare("INSERT INTO obs_devices(device_id,token_hash,created_ms) VALUES(?,?,?)")
       .bind(deviceId,await hashDeviceToken(deviceToken),Date.now()).run();
-    return json({deviceId,deviceToken,scope:"observatory:observe-only",intervalMs:5000,expiresAfterMs:30000},201);
+    return json({deviceId,deviceToken,scope:"observatory:observe-only",captureMode:"owner-manual",expiresAfterMs:30000},201);
   }
   if(path==="/v1/observatory/latest"){
     if(!await approveOwnerPair(request,env))fail(401,"OWNER_AUTH_REQUIRED");
