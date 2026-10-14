@@ -1,5 +1,6 @@
 import { dashboard } from "./ui.mjs";
 import {factoryHealth, factoryPreflight, FactoryBridgeError} from "./factory-bridge.mjs";
+import {queueFactoryJob,showFactoryJob,dispatchFactoryJob} from "./factory-jobs.mjs";
 // Cloudflare runtime for the existing Pantheon WorkHub Worker. Model output never authorizes tool execution.
 const enc = new TextEncoder();
 const TIMING_WINDOW_MS = 60_000;
@@ -76,6 +77,8 @@ async function markComplete(db, taskId, runId, digest, recovered=false) {
 }
 async function runTask(db, taskId) {
   const task=await getTask(db,taskId),runId=id("run"),timestamp=now();
+  const executor=await stmt(db,"SELECT tool_name FROM actions WHERE task_id=?",taskId).first();
+  if(executor?.tool_name!=="d1.create_text_artifact")throw new ApiError(409,"task requires Factory executor");
   if(task.status!=="QUEUED") throw new ApiError(409,"task is not QUEUED");
   // D1 batch commits atomically. Only a QUEUED task can be claimed.
   const claim=await db.batch([
@@ -105,6 +108,8 @@ async function runTask(db, taskId) {
 }
 async function recover(db, taskId) {
   const task=await getTask(db,taskId);
+  const executor=await stmt(db,"SELECT tool_name FROM actions WHERE task_id=?",taskId).first();
+  if(executor?.tool_name!=="d1.create_text_artifact")throw new ApiError(409,"task requires Factory reconciliation");
   if(!["RUNNING","NEEDS_RECONCILIATION"].includes(task.status)) throw new ApiError(409,"not recoverable");
   if(Date.now()-Date.parse(task.updated_at)<TIMING_WINDOW_MS) throw new ApiError(409,"run may still be active");
   const observed=await inspect(db,taskId),timestamp=now();
@@ -126,6 +131,8 @@ async function recover(db, taskId) {
 }
 async function retry(db,taskId) {
   const task=await getTask(db,taskId);
+  const executor=await stmt(db,"SELECT tool_name FROM actions WHERE task_id=?",taskId).first();
+  if(executor?.tool_name!=="d1.create_text_artifact")throw new ApiError(409,"task requires Factory reconciliation");
   if(task.status!=="FAILED") throw new ApiError(409,"retry requires failed/no-effect recovery");
   const seen=await inspect(db,taskId);
   if(seen.exists) throw new ApiError(409,"cannot retry existing artifact");
@@ -144,6 +151,20 @@ export default {
       if(!env.DB) throw new ApiError(503,"database not configured");
       if(path==="/v1/factory/health" && request.method==="GET") return reply({factory:await factoryHealth(env)});
       if(path==="/v1/factory/preflight" && request.method==="POST") return reply({factory:await factoryPreflight(env,await bodyJson(request))});
+      // Explicit owner-driven workflow: queue never dispatches.
+      if(path==="/v1/factory/jobs" && request.method==="POST") {
+        const body=await bodyJson(request);
+        requireObject(body,["request"]);
+        return reply(await queueFactoryJob(env.DB,body.request),201);
+      }
+      const jobPath=path.match(/^\/v1\/factory\/jobs\/(task_[a-f0-9]{32})(?:\/(dispatch|reconcile))?$/);
+      if(jobPath){
+        const [,taskId,action]=jobPath;
+        if(!action && request.method==="GET")return reply({job:await showFactoryJob(env.DB,taskId)});
+        if(action==="dispatch" && request.method==="POST")return reply(await dispatchFactoryJob(env.DB,env,taskId));
+        if(action==="reconcile" && request.method==="POST")return reply(await dispatchFactoryJob(env.DB,env,taskId,{reconcile:true}));
+        throw new ApiError(405,"method not allowed");
+      }
       // Sending work to /station/receive is intentionally unavailable: signed preflight
       // never constitutes City Hall authorization or approval to dispatch.
       if(path==="/v1/intent" && request.method==="POST") {
