@@ -3,7 +3,7 @@
 const enc=new TextEncoder();
 const PROTOCOL="METROPOLIS_FACTORY_STATION_V2";
 const FACTORY_ORIGIN="https://factory-district.internal";
-const REQUEST_TIMEOUT_MS=5000;
+const REQUEST_TIMEOUT_MS=20000;
 export class FactoryBridgeError extends Error{
  constructor(status,message){super(message);this.status=status;}
 }
@@ -13,7 +13,7 @@ async function callFactory(env,path,{method="GET",body,headers={},allowConflict=
  const request=new Request(FACTORY_ORIGIN+path,{method,headers,body});
  let response;
  try{response=await env.FACTORY.fetch(request,{signal:AbortSignal.timeout(REQUEST_TIMEOUT_MS)});}
- catch{throw new FactoryBridgeError(502,"factory service unreachable");}
+ catch(error){throw new FactoryBridgeError(502,error?.name==="TimeoutError"||error?.name==="AbortError"?"factory service timed out":"factory service unreachable");}
  if(!response || (!response.ok && !(allowConflict && response.status===409))){
   let reason="factory refused request";
   try{const result=await response?.json();if(limitedString(result?.reason,100))reason=result.reason;}catch{}
