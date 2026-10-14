@@ -67,11 +67,39 @@ The pre-existing `phatheon-workhub` was only a Hello-world script without bindin
 
 Legacy staging Worker `pantheon-workhub-staging` and legacy D1 `pantheon-workhub-staging` are *migration fallbacks*, not required for the primary Worker. After independently verifying the primary Worker, an owner may decommission these two staging resources. Do not delete primary D1 `pantheon-workhub` or primary Worker `phatheon-workhub`.
 
-## Factory District bridge (read-only connected, safe preflight prepared)
+## Factory District: owner-triggered LOGIC trainee integration
 
-- Internal Cloudflare Service Binding: `FACTORY` -> existing `factory-district`. No separate public Factory URL or proxy credentials are needed for a health check.
-- Public `GET /health` returns *sanitized* `factory.connection` and `dispatch_enabled:false`. The owner-only `GET /v1/factory/health` provides Factory station/rail/machine status. The dashboard displays this status after sign-in, and has a Check Factory button.
-- Owner-only `POST /v1/factory/preflight` validates an **already issued and active** `WORK_PASS_V1`, matching work ID, checkpoint, target, domain, and scope. It signs the exact payload as `METROPOLIS_FACTORY_STATION_V2` with HMAC-SHA256 and calls Factory `/station/preflight`. The Factory makes its own final permission and SHA checks. A READY response **never** dispatches work.
-- This path requires a separate WorkHub Worker secret `FACTORY_RAIL_SECRET` containing the **same** key as Factory's existing `METROPOLIS_FACTORY_RAIL_SECRET`, length >= 32. These are not the `WORKHUB_TOKEN`. Existing Factory key material cannot be read from Cloudflare; do not rotate or overwrite the Factory rail key without coordinating existing clients. If missing, preflight fails closed with HTTP 503.
-- No `/v1/factory/receive` dispatch endpoint is exposed. Creating WorkHub tasks and invoking the existing D1 artifact runner never execute Factory work. A future approved dispatch must implement explicit City Hall authorization, idempotent receipts, safe retry, readback and evidence checks before enablement.
-- Only the WorkHub Worker changed. Factory District code, secrets and access rules were left intact; no Factory or Observatory job was launched. Local unit tests validate HMAC and scope gates against a simulated Factory binding, while the CI check probes the actual deployed read-only Factory health path.
+Factory maintains the existing City/Metro HMAC key untouched. A new isolated
+`PANTHEON_FACTORY_RAIL_SECRET` at Factory and `FACTORY_PANTHEON_SECRET` at
+WorkHub must hold the **same newly generated key**, stored as Cloudflare secret
+bindings. Neither key belongs in GitHub, Work payload, browser nor logs.
+The Factory checks the `PANTHEON` signed client header and restricts it to
+PANTHEON-owned scoped `WORK_PASS_V1` envelopes, `LOGIC` and
+`PLACE_DWARF_LOGIC_TRAINEE`; it cannot impersonate City Hall.
+
+Run `cloud/migrations/0002_factory_jobs.sql` **once** against existing primary
+D1 before deploying the updated WorkHub. Do not drop or replace current tables.
+
+Owner-only API (Authorization: Bearer WORKHUB_TOKEN):
+- `POST /v1/factory/jobs` with `{"request":"training bench note"}` creates
+  QUEUED Work with durable Work ID, but **does not execute** anything.
+- `POST /v1/factory/jobs/:task_id/dispatch` explicitly claims and sends the
+  immutable Work Pass via the FACTORY Service Binding. First Factory preflight
+  validates scope, then Factory persists idempotency claim and runs its
+  registered LOGIC trainee bench handler.
+- `GET /v1/factory/jobs/:task_id` shows durable receipt and evidence readback.
+- `POST /v1/factory/jobs/:task_id/reconcile` reads the saved receipt without
+  resending work, or reissues the identical Work ID and Checkpoint ID when the
+  original response was lost. Factory guarantees no second machine execution.
+
+A Factory `HANDOFF_VERIFIED` receipt without verified domain evidence is not
+COMPLETED. The LOGIC runner currently places `DWARF-01` at the DEVELOPMENT_BENCH
+with `productionAuthority:false`; it is **not** production CODE/VISUAL
+execution, AI inference, or fulfillment of arbitrary free-text instructions.
+The WorkHub stores the owner note for traceability only.
+
+The public health endpoint remains metadata-only; no private Work or secret
+is surfaced. Service Binding connectivity and CI mock tests are not a substitute
+for an authorized production preflight/dispatch/readback test. WorkHub
+`WORKHUB_TOKEN` remains owner-only and must be rotated privately to a known
+high-entropy value before interactive use.
