@@ -1,0 +1,19 @@
+name: PANTHEON Observatory Contract
+on:
+  pull_request:
+    paths:
+      - "cloudflare/staging/**"
+      - ".github/workflows/observatory-pantheon-test.yml"
+  push:
+    branches: [main]
+    paths:
+      - "cloudflare/staging/**"
+jobs:
+  observatory:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node --test cloudflare/staging/observatory.test.mjs
