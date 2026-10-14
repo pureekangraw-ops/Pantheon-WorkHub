@@ -1,0 +1,18 @@
+{
+  "name": "phatheon-workhub",
+  "main": "owner-entrypoint.mjs",
+  "compatibility_date": "2026-10-13",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "pantheon-workhub",
+      "database_id": "22b59dc3-e07c-4ae7-b5b1-2646d3e8a975"
+    }
+  ],
+  "services": [
+    {
+      "binding": "FACTORY",
+      "service": "factory-district"
+    }
+  ]
+}
