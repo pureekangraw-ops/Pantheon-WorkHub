@@ -15,17 +15,6 @@ function requireObject(v, keys) {
 async function authorize(request, env) {
   if (typeof env.WORKHUB_TOKEN !== "string" || env.WORKHUB_TOKEN.length < 32) throw new ApiError(503,"authentication not configured");
   const supplied=request.headers.get("authorization") || "";
-  // One-time CI E2E credential restricted to the Factory jobs namespace.
-  const path=new URL(request.url).pathname;
-  if((path==="/v1/factory/jobs"||path.startsWith("/v1/factory/jobs/"))
-    && typeof env.WORKHUB_SMOKE_TOKEN==="string" && env.WORKHUB_SMOKE_TOKEN.length>=32){
-    const candidate="Bearer "+env.WORKHUB_SMOKE_TOKEN;
-    if(supplied.length===candidate.length){
-      let diff=0;
-      for(let i=0;i<candidate.length;i++)diff|=supplied.charCodeAt(i)^candidate.charCodeAt(i);
-      if(diff===0)return;
-    }
-  }
   const expected="Bearer " + env.WORKHUB_TOKEN;
   if (supplied.length !== expected.length) throw new ApiError(401,"unauthorized");
   let difference=0;
