@@ -103,3 +103,21 @@ is surfaced. Service Binding connectivity and CI mock tests are not a substitute
 for an authorized production preflight/dispatch/readback test. WorkHub
 `WORKHUB_TOKEN` remains owner-only and must be rotated privately to a known
 high-entropy value before interactive use.
+
+## Live Pantheon → Factory acceptance (2026-10-14)
+
+The scoped owner-dispatched LOGIC trainee path completed one real Work under ID
+`task_be8f62ad42f3425baa29e3dbe7d6e3f2`. Factory receipt:
+`receipt-a9327c1d-1856-4b27-b656-f8bae03dbe10`.
+Factory recovered an interrupted receipt **only after verifying persisted DWARF-01
+trainee placement in R2**, without a second machine run. Signed Factory readback
+and WorkHub D1 both report COMPLETED with `domainVerified:true` and
+`boundaryVerified:true`, SHA-256 readback proof
+`b2cb42ffbe2ce80a82015c9d2a6fb3b31370e6d71642d2f4ba52005317a8d94c`.
+Production E2E Action run: https://github.com/pureekangraw-ops/Factory-District/actions/runs/38504439559
+
+This proves the DWARF LOGIC DEVELOPMENT_BENCH path only; the bench has
+`productionAuthority:false` and does not execute arbitrary owner text,
+AI inference or CODE/VISUAL machinery. The temporary smoke credential was revoked
+after testing and its code gate removed; WORKHUB_TOKEN and isolated PANTHEON
+Factory HMAC remain in place. PR #2 stays draft pending broader WorkHub release.
