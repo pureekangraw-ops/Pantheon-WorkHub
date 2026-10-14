@@ -81,6 +81,9 @@ async function settle(db,j,back,receiptId){
   result:back.result||null,evidence_ref:back.evidenceRef||null,readback_sha256:hash};
 }
 export async function dispatchFactoryJob(db,env,taskId,{reconcile=false}={}){
+ // Do not ever fall back to the privileged Metro/City rail for Factory effects.
+ if(typeof env.FACTORY_PANTHEON_SECRET!=="string"||env.FACTORY_PANTHEON_SECRET.length<32)
+   throw new FactoryBridgeError(503,"isolated Pantheon rail not configured");
  const j=await job(db,taskId);
  const eligible=reconcile?["NEEDS_RECONCILIATION","DISPATCHING"]:["QUEUED"];
  if(!eligible.includes(j.status))throw new FactoryBridgeError(409,"Factory job not eligible for "+(reconcile?"reconciliation":"dispatch"));
