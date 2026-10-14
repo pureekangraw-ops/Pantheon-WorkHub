@@ -87,3 +87,15 @@ export async function factoryReadback(env,receiptId){
   throw new FactoryBridgeError(400,"invalid receipt ID");
  return signedFactory(env,"/station/readback/"+encodeURIComponent(receiptId),"GET",null);
 }
+
+export async function factoryReconcile(env,input){
+ const envelope=validateFactoryPreflight(input);
+ const result=await signedFactory(env,"/station/reconcile","POST",envelope,true);
+ if(result?.status==="UNKNOWN")throw new FactoryBridgeError(409,
+   typeof result.reason==="string"?result.reason:"factory effect unverified");
+ if(!["RECOVERED","RECORDED"].includes(result?.status) || !result.receipt
+   || result.receipt.workId!==envelope.workId || result.receipt.checkpointId!==envelope.checkpointId
+   || result.receipt.workPassRef!==envelope.workPassRef)
+  throw new FactoryBridgeError(502,"factory reconciliation identity mismatch");
+ return result;
+}
