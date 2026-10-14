@@ -98,7 +98,8 @@ export async function dispatchFactoryJob(db,env,taskId,{reconcile=false}={}){
    return await settle(db,j,back,j.receipt_id);
   }
   const data=envelope(j);
-  await factoryPreflight(env,data);
+  const preflight=await factoryPreflight(env,data);
+  await audit(db,taskId,"FACTORY_PREFLIGHT_VERIFIED",{source_sha:preflight.sourceSha||null});
   const dispatched=await factoryDispatch(env,data);
   const receipt=dispatched.receipt.receiptId;
   // Persist receipt before further network calls, so subsequent reconciliations
