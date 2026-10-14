@@ -3,11 +3,15 @@ on:
   pull_request:
     paths:
       - "cloudflare/staging/**"
+      - "cloudflare/production/owner-bridge.mjs"
+      - "cloudflare/production/owner-bridge.test.mjs"
       - ".github/workflows/observatory-pantheon-test.yml"
   push:
     branches: [main]
     paths:
       - "cloudflare/staging/**"
+      - "cloudflare/production/owner-bridge.mjs"
+      - "cloudflare/production/owner-bridge.test.mjs"
 jobs:
   observatory:
     runs-on: ubuntu-latest
@@ -17,3 +21,4 @@ jobs:
         with:
           node-version: "22"
       - run: node --test cloudflare/staging/observatory.test.mjs
+      - run: node --test cloudflare/production/owner-bridge.test.mjs
