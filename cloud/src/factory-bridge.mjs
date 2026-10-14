@@ -1,5 +1,5 @@
-// Read-only Factory District bridge. Nothing in this module dispatches work.
-// Factory remains the authority for WORK_PASS, City Hall grants and HMAC rail auth.
+// Factory bridge: owner-approved LOGIC trainee handoffs only.
+// This rail uses an isolated Pantheon principal; Metro/City credentials stay untouched.
 const enc=new TextEncoder();
 const PROTOCOL="METROPOLIS_FACTORY_STATION_V2";
 const FACTORY_ORIGIN="https://factory-district.internal";
@@ -29,7 +29,7 @@ export async function factoryHealth(env){
     return {connection:"INVALID_TARGET",dispatch_enabled:false};
   const machinery=h.machinery??{};
   const machines=Object.fromEntries(["CODE","VISUAL","LOGIC"].map(x=>[x,machinery[x]?.status==="READY"?"READY":"UNKNOWN"]));
-  return {connection:"CONNECTED",service:"factory-district",station_status:h.status==="READY"?"READY":"UNKNOWN",rail_status:h.transport?.status==="READY"?"READY":"UNKNOWN",machinery:machines,preflight_configured:typeof (env.FACTORY_PANTHEON_SECRET||env.FACTORY_RAIL_SECRET)==="string"&&(env.FACTORY_PANTHEON_SECRET||env.FACTORY_RAIL_SECRET).length>=32,dispatch_enabled:false};
+  return {connection:"CONNECTED",service:"factory-district",station_status:h.status==="READY"?"READY":"UNKNOWN",rail_status:h.transport?.status==="READY"?"READY":"UNKNOWN",machinery:machines,preflight_configured:typeof (env.FACTORY_PANTHEON_SECRET||env.FACTORY_RAIL_SECRET)==="string"&&(env.FACTORY_PANTHEON_SECRET||env.FACTORY_RAIL_SECRET).length>=32,dispatch_enabled:typeof env.FACTORY_PANTHEON_SECRET==="string"&&env.FACTORY_PANTHEON_SECRET.length>=32&&h.status==="READY"&&h.transport?.status==="READY"&&machines.LOGIC==="READY"};
  }catch{return {connection:"UNREACHABLE",dispatch_enabled:false};}
 }
 export function validateFactoryPreflight(input){
