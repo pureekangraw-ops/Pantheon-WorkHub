@@ -213,3 +213,19 @@ test("Factory boundary verified without machine evidence is never marked complet
  assert.equal(a.data.status,"NEEDS_RECONCILIATION");
  assert.equal((await api(e,"/v1/factory/jobs/"+q.data.task_id,{method:"GET"})).data.job.task_status,"NEEDS_RECONCILIATION");
 });
+
+test("temporary Factory-only smoke credential cannot access existing owner APIs",async()=>{
+ const e={...env(),WORKHUB_SMOKE_TOKEN:"probe-".repeat(12)};
+ const headers={authorization:"Bearer "+e.WORKHUB_SMOKE_TOKEN,"content-type":"application/json"};
+ const route=async(path,method="POST",body)=> {
+  const r=await worker.fetch(new Request("https://stage.example"+path,{method,headers,body:body===undefined?undefined:JSON.stringify(body)}),e);
+  return {status:r.status,data:await r.json()};
+ };
+ assert.equal((await route("/v1/intent","POST",{intent:"LIST_TASKS"})).status,401);
+ assert.equal((await route("/v1/factory/preflight","POST",{})).status,401);
+ const q=await route("/v1/factory/jobs","POST",{request:"Scoped E2E training bench"});
+ assert.equal(q.status,201);assert.equal(q.data.executed,false);
+ assert.equal((await route("/v1/factory/jobs/"+q.data.task_id,"GET")).status,200);
+ assert.equal((await route("/v1/tasks/"+q.data.task_id+"/run")).status,401);
+ assert.equal((await route("/v1/factory/jobs/"+q.data.task_id+"/dispatch")).status,503);
+});
