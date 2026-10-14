@@ -16,7 +16,7 @@ pre{font-size:12px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere;b
 footer{padding:20px;text-align:center;color:#718b9a;font-size:12px}@media(max-width:760px){.layout{grid-template-columns:1fr}main{margin-top:24px}header{padding:16px 20px}}
 </style></head><body>
 <header><strong>✦ Pantheon <span style="color:#217fbe">WorkHub</span></strong><span class="tag">WORKSPACE PREVIEW</span></header>
-<main><div class="headline"><h1>Work, with proof.</h1><div class="muted">Queue instructions, explicitly run a safe artifact tool, and verify each result. This preview does not invoke external tools or AI automatically.</div></div>
+<main><div class="headline"><h1>Work, with proof.</h1><div class="muted">Queue work without executing. Explicitly run a safe text artifact or owner-authorized Factory LOGIC trainee placement; inspect receipt and evidence.</div></div>
 <div id="gate" class="panel"><h2>Connect to your workspace</h2><p class="muted">Enter your WorkHub access token. The token is kept in this page's memory only and is not saved in the browser.</p><label for="access">Access token</label><input id="access" type="password" autocomplete="off" placeholder="WorkHub access token"><div class="actions"><button id="connect">Connect</button></div></div>
 <div id="workspace" class="layout">
  <section><div class="panel"><h2>Create a task</h2><div class="muted">HERMES can propose this task. Creating it does not run an action.</div><label for="request">Task instruction</label><textarea id="request" placeholder="Describe a text artifact to create..."></textarea><div class="actions"><button id="create">Queue task</button><button id="signout" class="secondary">Disconnect</button></div></div>
@@ -24,7 +24,7 @@ footer{padding:20px;text-align:center;color:#718b9a;font-size:12px}@media(max-wi
  <div class="panel"><h2>Verification detail</h2><pre id="details">Select a task to view its audit trail.</pre></div></section>
  <section><div class="panel"><div class="taskhead"><h2>Task queue</h2><span id="count" class="stat">0 tasks</span></div><button id="refresh" class="secondary">Refresh</button><div id="tasks"></div></div></section>
 </div><div id="notice" role="status" aria-live="polite"></div>
-</main><footer>Pantheon WorkHub • Cloudflare WorkHub • safe artifact execution only</footer>
+</main><footer>Pantheon WorkHub • controlled Factory LOGIC trainee handoffs</footer>
 <script>
 (() => {
  const el=id=>document.getElementById(id); let token="";
