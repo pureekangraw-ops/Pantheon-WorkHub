@@ -132,3 +132,84 @@ test("dashboard HTML is served publicly without exposing workspace data",async()
   assert.doesNotMatch(html,/\bWORKHUB_TOKEN\b/);
   assert.equal((await api(e,"/v1/intent",{method:"POST",auth:false,body:{intent:"LIST_TASKS"}})).status,401);
 });
+
+const PANTHEON_SECRET="pantheon-integration-test-secret-".repeat(3);
+function factoryBinding({loseFirstReceipt=false,verified=true}={}){
+ const receipts=new Map();let dispatches=0,connections=0,firstLost=loseFirstReceipt;
+ const binding={async fetch(request){
+   connections++;
+   const path=new URL(request.url).pathname;
+   if(path==="/health")return new Response(JSON.stringify({service:"factory-district",stationId:"FACTORY-STATION",status:"READY",
+     transport:{status:"READY"},machinery:{LOGIC:{status:"READY"}}}),{status:200});
+   const body=request.method==="GET"?"":await request.text();
+   const timestamp=request.headers.get("x-metropolis-factory-timestamp");
+   const sig=request.headers.get("x-metropolis-factory-signature");
+   assert.equal(request.headers.get("x-factory-client"),"PANTHEON");
+   const key=await crypto.subtle.importKey("raw",new TextEncoder().encode(PANTHEON_SECRET),{name:"HMAC",hash:"SHA-256"},false,["verify"]);
+   const ok=await crypto.subtle.verify("HMAC",key,Uint8Array.from(sig.match(/../g).map(h=>parseInt(h,16))),new TextEncoder().encode(timestamp+"."+body));
+   assert.equal(ok,true);
+   if(path==="/station/preflight"){
+    const work=JSON.parse(body);
+    return new Response(JSON.stringify({status:"READY",allowed:true,workId:work.workId,checkpointId:work.checkpointId,workPassRef:work.workPassRef,sourceSha:"testsha"}));
+   }
+   if(path==="/station/receive"){
+    const work=JSON.parse(body);
+    let record=receipts.get(work.workId);
+    if(!record){
+      dispatches++;
+      const receiptId="receipt-"+crypto.randomUUID();
+      record={receipt:{receiptId,workId:work.workId,checkpointId:work.checkpointId,workPassRef:work.workPassRef,status:"HANDOFF_VERIFIED"},
+       readback:{receiptId,workId:work.workId,checkpointId:work.checkpointId,workPassRef:work.workPassRef,actingActor:"PANTHEON",status:"HANDOFF_VERIFIED",boundaryVerified:true,domainCompleted:verified,domainVerified:verified,evidenceRef:"evidence://factory/logic",sourceSha:"testsha",result:verified?{evidenceRefs:["r2://factory/logic/trainee"],resultRefs:["r2://factory/logic/trainee"]}:null}};
+      receipts.set(work.workId,record);
+    }
+    if(firstLost){firstLost=false;throw new Error("network response lost after Factory effect")}
+    return new Response(JSON.stringify(record),{status:202});
+   }
+   if(path.startsWith("/station/readback/")){
+     const record=[...receipts.values()].find(v=>v.receipt.receiptId===path.split("/").at(-1));
+     return new Response(JSON.stringify(record?.readback||{status:"UNKNOWN",reason:"RECEIPT_NOT_FOUND"}),{status:record?200:404});
+   }
+   throw new Error("Unexpected Factory route "+path);
+ }};
+ return {binding,get dispatches(){return dispatches;},get connections(){return connections;}};
+}
+test("Factory queued owner action authenticates a scoped rail and verifies independent readback",async()=>{
+ const f=factoryBinding(),e={...env(),FACTORY_PANTHEON_SECRET:PANTHEON_SECRET,FACTORY:f.binding};
+ const invalid=await api(e,"/v1/factory/jobs",{method:"POST",body:{request:"hello",actor:"GO"}});
+ assert.equal(invalid.status,400);
+ const unauthorized=await api(e,"/v1/factory/jobs",{method:"POST",body:{request:"LOGIC trainee"} ,auth:false});
+ assert.equal(unauthorized.status,401);
+ const q=await api(e,"/v1/factory/jobs",{method:"POST",body:{request:"Place DWARF-01 in LOGIC development bench"}});
+ assert.equal(q.status,201);assert.equal(q.data.executed,false);assert.equal(f.dispatches,0);
+ const id=q.data.task_id;
+ assert.equal((await api(e,"/v1/tasks/"+id+"/run",{method:"POST"})).status,409);
+ const run=await api(e,"/v1/factory/jobs/"+id+"/dispatch",{method:"POST"});
+ assert.equal(run.status,200,JSON.stringify(run));assert.equal(run.data.verified,true);
+ assert.equal(run.data.status,"COMPLETED");assert.equal(f.dispatches,1);
+ assert.equal((await api(e,"/v1/factory/jobs/"+id,{method:"GET"})).data.job.status,"COMPLETED");
+ const rows=await api(e,"/v1/tasks/"+id+"/events");
+ assert.ok(rows.data.events.some(v=>v.type==="FACTORY_RECEIPT_RECORDED"));
+ assert.ok(rows.data.events.some(v=>v.type==="FACTORY_RESULT_VERIFIED"));
+ assert.equal((await api(e,"/v1/factory/jobs/"+id+"/dispatch",{method:"POST"})).status,409);
+ assert.equal((await api(e,"/v1/tasks/"+id+"/recover",{method:"POST"})).status,409);
+ assert.equal(f.dispatches,1);
+});
+test("Factory rail response loss goes to reconciliation; resend is idempotent",async()=>{
+ const f=factoryBinding({loseFirstReceipt:true}),e={...env(),FACTORY_PANTHEON_SECRET:PANTHEON_SECRET,FACTORY:f.binding};
+ const q=await api(e,"/v1/factory/jobs",{method:"POST",body:{request:"reconcile trainee placement"}});
+ const id=q.data.task_id;
+ const a=await api(e,"/v1/factory/jobs/"+id+"/dispatch",{method:"POST"});
+ assert.equal(a.status,502);assert.equal(f.dispatches,1);
+ assert.equal((await api(e,"/v1/factory/jobs/"+id,{method:"GET"})).data.job.status,"NEEDS_RECONCILIATION");
+ const r=await api(e,"/v1/factory/jobs/"+id+"/reconcile",{method:"POST"});
+ assert.equal(r.status,200,JSON.stringify(r));assert.equal(r.data.verified,true);
+ assert.equal(f.dispatches,1);
+});
+test("Factory boundary verified without machine evidence is never marked complete",async()=>{
+ const f=factoryBinding({verified:false}),e={...env(),FACTORY_PANTHEON_SECRET:PANTHEON_SECRET,FACTORY:f.binding};
+ const q=await api(e,"/v1/factory/jobs",{method:"POST",body:{request:"unverified trainee"}});
+ const a=await api(e,"/v1/factory/jobs/"+q.data.task_id+"/dispatch",{method:"POST"});
+ assert.equal(a.status,200);assert.equal(a.data.verified,false);
+ assert.equal(a.data.status,"NEEDS_RECONCILIATION");
+ assert.equal((await api(e,"/v1/factory/jobs/"+q.data.task_id,{method:"GET"})).data.job.task_status,"NEEDS_RECONCILIATION");
+});

@@ -70,5 +70,5 @@ jobs:
           echo "$result" | grep -F '"service":"pantheon-workhub"'
           echo "$result" | grep -F '"connection":"CONNECTED"'
           echo "$result" | grep -F '"service":"factory-district"'
-          echo "$result" | grep -F '"dispatch_enabled":false'
+          echo "$result" | grep -F '"dispatch_enabled":'
 

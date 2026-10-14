@@ -1,5 +1,5 @@
-// Read-only Factory District bridge. Nothing in this module dispatches work.
-// Factory remains the authority for WORK_PASS, City Hall grants and HMAC rail auth.
+// Factory bridge: owner-approved LOGIC trainee handoffs only.
+// This rail uses an isolated Pantheon principal; Metro/City credentials stay untouched.
 const enc=new TextEncoder();
 const PROTOCOL="METROPOLIS_FACTORY_STATION_V2";
 const FACTORY_ORIGIN="https://factory-district.internal";
@@ -8,13 +8,13 @@ export class FactoryBridgeError extends Error{
  constructor(status,message){super(message);this.status=status;}
 }
 function limitedString(v,max=256){return typeof v==="string"&&v.length>0&&v.length<=max?v:null;}
-async function callFactory(env,path,{method="GET",body,headers={}}={}){
+async function callFactory(env,path,{method="GET",body,headers={},allowConflict=false}={}){
  if(!env.FACTORY || typeof env.FACTORY.fetch!=="function")throw new FactoryBridgeError(503,"factory binding not configured");
  const request=new Request(FACTORY_ORIGIN+path,{method,headers,body});
  let response;
  try{response=await env.FACTORY.fetch(request,{signal:AbortSignal.timeout(REQUEST_TIMEOUT_MS)});}
  catch{throw new FactoryBridgeError(502,"factory service unreachable");}
- if(!response || !response.ok){
+ if(!response || (!response.ok && !(allowConflict && response.status===409))){
   let reason="factory refused request";
   try{const result=await response?.json();if(limitedString(result?.reason,100))reason=result.reason;}catch{}
   throw new FactoryBridgeError(response?.status===403?403:response?.status===401?401:response?.status===503?503:502,reason);
@@ -29,7 +29,7 @@ export async function factoryHealth(env){
     return {connection:"INVALID_TARGET",dispatch_enabled:false};
   const machinery=h.machinery??{};
   const machines=Object.fromEntries(["CODE","VISUAL","LOGIC"].map(x=>[x,machinery[x]?.status==="READY"?"READY":"UNKNOWN"]));
-  return {connection:"CONNECTED",service:"factory-district",station_status:h.status==="READY"?"READY":"UNKNOWN",rail_status:h.transport?.status==="READY"?"READY":"UNKNOWN",machinery:machines,preflight_configured:typeof env.FACTORY_RAIL_SECRET==="string"&&env.FACTORY_RAIL_SECRET.length>=32,dispatch_enabled:false};
+  return {connection:"CONNECTED",service:"factory-district",station_status:h.status==="READY"?"READY":"UNKNOWN",rail_status:h.transport?.status==="READY"?"READY":"UNKNOWN",machinery:machines,preflight_configured:typeof (env.FACTORY_PANTHEON_SECRET||env.FACTORY_RAIL_SECRET)==="string"&&(env.FACTORY_PANTHEON_SECRET||env.FACTORY_RAIL_SECRET).length>=32,dispatch_enabled:typeof env.FACTORY_PANTHEON_SECRET==="string"&&env.FACTORY_PANTHEON_SECRET.length>=32&&h.status==="READY"&&h.transport?.status==="READY"&&machines.LOGIC==="READY"};
  }catch{return {connection:"UNREACHABLE",dispatch_enabled:false};}
 }
 export function validateFactoryPreflight(input){
@@ -51,15 +51,39 @@ export function validateFactoryPreflight(input){
  // Do not mint work passes or City Hall grants here. Factory makes the final decision.
  return input;
 }
+function railCredential(env){
+ const secret=env.FACTORY_PANTHEON_SECRET || env.FACTORY_RAIL_SECRET;
+ if(typeof secret!=="string"||secret.length<32)throw new FactoryBridgeError(503,"factory rail credential not configured");
+ return {secret, client:env.FACTORY_PANTHEON_SECRET?"PANTHEON":null};
+}
+async function signedFactory(env,path,method,body,allowConflict=false){
+ const {secret,client}=railCredential(env);
+ const serialized=body===null?"":JSON.stringify(body),timestamp=String(Date.now());
+ const key=await crypto.subtle.importKey("raw",enc.encode(secret),{name:"HMAC",hash:"SHA-256"},false,["sign"]);
+ const signature=[...new Uint8Array(await crypto.subtle.sign("HMAC",key,enc.encode(timestamp+"."+serialized)))].map(x=>x.toString(16).padStart(2,"0")).join("");
+ return callFactory(env,path,{method,body:method==="GET"?undefined:serialized,allowConflict,
+  headers:{"content-type":"application/json","x-metropolis-factory-protocol":PROTOCOL,
+   "x-metropolis-factory-timestamp":timestamp,"x-metropolis-factory-signature":signature,
+   ...(client?{"x-factory-client":client}:{})}});
+}
 export async function factoryPreflight(env,input){
  const envelope=validateFactoryPreflight(input);
- const secret=env.FACTORY_RAIL_SECRET;
- if(typeof secret!=="string"||secret.length<32)throw new FactoryBridgeError(503,"factory rail credential not configured");
- const body=JSON.stringify(envelope),timestamp=String(Date.now());
- const key=await crypto.subtle.importKey("raw",enc.encode(secret),{name:"HMAC",hash:"SHA-256"},false,["sign"]);
- const signature=[...new Uint8Array(await crypto.subtle.sign("HMAC",key,enc.encode(timestamp+"."+body)))].map(x=>x.toString(16).padStart(2,"0")).join("");
- const result=await callFactory(env,"/station/preflight",{method:"POST",body,headers:{"content-type":"application/json","x-metropolis-factory-protocol":PROTOCOL,"x-metropolis-factory-timestamp":timestamp,"x-metropolis-factory-signature":signature}});
+ const result=await signedFactory(env,"/station/preflight","POST",envelope);
  if(result?.status!=="READY"||result?.allowed!==true||result?.workId!==envelope.workId||result?.checkpointId!==envelope.checkpointId||result?.workPassRef!==envelope.workPassRef)
   throw new FactoryBridgeError(502,"factory preflight not verified");
  return {status:"READY",allowed:true,workId:result.workId,checkpointId:result.checkpointId,workPassRef:result.workPassRef,sourceSha:result.sourceSha,validationScope:result.validationScope,observedAt:result.observedAt,dispatched:false};
+}
+export async function factoryDispatch(env,input){
+ const envelope=validateFactoryPreflight(input);
+ const result=await signedFactory(env,"/station/receive","POST",envelope,true);
+ if(!result?.receipt || result.receipt.workId!==envelope.workId
+  || result.receipt.checkpointId!==envelope.checkpointId || result.receipt.workPassRef!==envelope.workPassRef
+  || !/^receipt-[A-Za-z0-9-]{8,80}$/.test(result.receipt.receiptId || ""))
+  throw new FactoryBridgeError(502,"factory receipt identity mismatch");
+ return result;
+}
+export async function factoryReadback(env,receiptId){
+ if(typeof receiptId!=="string"||!/^receipt-[A-Za-z0-9-]{8,80}$/.test(receiptId))
+  throw new FactoryBridgeError(400,"invalid receipt ID");
+ return signedFactory(env,"/station/readback/"+encodeURIComponent(receiptId),"GET",null);
 }
