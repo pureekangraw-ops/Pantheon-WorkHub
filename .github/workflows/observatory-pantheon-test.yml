@@ -3,11 +3,15 @@ on:
   pull_request:
     paths:
       - "cloudflare/staging/**"
+      - "cloudflare/production/**"
+      - "cloudflare/tests/**"
       - ".github/workflows/observatory-pantheon-test.yml"
   push:
     branches: [main]
     paths:
       - "cloudflare/staging/**"
+      - "cloudflare/production/**"
+      - "cloudflare/tests/**"
 jobs:
   observatory:
     runs-on: ubuntu-latest
@@ -15,5 +19,5 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "22"
-      - run: node --test cloudflare/staging/observatory.test.mjs
+          node-version: "24"
+      - run: node --test --test-isolation=none cloudflare/staging/observatory.test.mjs cloudflare/tests/*.test.mjs

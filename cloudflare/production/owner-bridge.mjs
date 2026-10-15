@@ -4,9 +4,17 @@ const fail=(status,upstream_status=400)=>({ok:false,status,upstream_status});
 const task=v=>typeof v==='string'&&/^task_[a-f0-9]{32}$/.test(v);
 const keys=(v,allowed)=>v&&typeof v==='object'&&!Array.isArray(v)&&Object.keys(v).every(k=>allowed.includes(k));
 export async function ownerBridgeCall(env,workhub,a){
- if(!keys(a,['operation','payload','request','task_id','approved']))return fail('INVALID_BRIDGE_REQUEST');
+ if(!keys(a,['operation','payload','request','task_id','approved','view','device_id','capture_id']))return fail('INVALID_BRIDGE_REQUEST');
  let path,method='POST',payload;
  switch(a.operation){
+ case 'observatory_latest': {
+  if(!keys(a,['operation','view','device_id','capture_id'])||!['browser','map'].includes(a.view))return fail('INVALID_OBSERVATORY_REQUEST');
+  if(a.device_id!==undefined&&(typeof a.device_id!=='string'||!/^obs_[a-f0-9]{32}$/.test(a.device_id)))return fail('INVALID_DEVICE_ID');
+  if(a.capture_id!==undefined&&(typeof a.capture_id!=='string'||!/^[a-zA-Z0-9_-]{8,100}$/.test(a.capture_id)))return fail('INVALID_CAPTURE_ID');
+  const query=new URLSearchParams({view:a.view,round:'1'});
+  for(const key of ['device_id','capture_id'])if(a[key]!==undefined)query.set(key,a[key]);
+  path='/v1/observatory/latest?'+query;method='GET';break;
+ }
  case 'intent':
   if(!keys(a,['operation','payload'])||!keys(a.payload,['intent','request','task_id']))return fail('INVALID_INTENT');
   payload=a.payload;path='/v1/intent';

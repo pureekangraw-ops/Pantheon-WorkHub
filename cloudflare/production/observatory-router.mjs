@@ -1,6 +1,6 @@
 import { approveOwnerPair, createDeviceToken, hashDeviceToken, resolveDevice } from "./observatory-auth.mjs";
 import { ensureObservatorySchema } from "./observatory-schema.mjs";
-import { putSnapshot, stopStream, latestObservatory, revokeDevice } from "./observatory-stream.mjs";
+import { putSnapshot, stopStream, latestObservatory, readObservatoryRound, revokeDevice } from "./observatory-stream.mjs";
 const json=(result,status=200)=>new Response(JSON.stringify(result),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store","x-content-type-options":"nosniff"}});
 const fail=(status,code)=>{throw Object.assign(new Error(code),{status});};
 async function readBody(request){
@@ -26,6 +26,7 @@ async function route(request,env){
   }
   if(path==="/v1/observatory/latest"){
     if(!await approveOwnerPair(request,env))fail(401,"OWNER_AUTH_REQUIRED");
+    if(url.searchParams.get('round')==='1')return json(await readObservatoryRound(env.DB,url.searchParams.get('view'),url.searchParams.get('device_id')??undefined,url.searchParams.get('capture_id')??undefined));
     return json(await latestObservatory(env.DB,url.searchParams.get("view")));
   }
   const record=await resolveDevice(request,env.DB);
