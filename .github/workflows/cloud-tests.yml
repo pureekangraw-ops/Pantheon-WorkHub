@@ -1,0 +1,74 @@
+name: WorkHub Cloud checks
+on:
+  push:
+    branches:
+      - feat/cloud-local-parity-20261014
+    paths:
+      - "cloud/**"
+      - ".github/workflows/cloud-tests.yml"
+  pull_request:
+    paths:
+      - "cloud/**"
+      - ".github/workflows/cloud-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  node:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm run check
+        working-directory: cloud
+      - run: npm test
+        working-directory: cloud
+      - name: Install Wrangler for actual Workers and D1 E2E
+        run: npm install --no-save wrangler@4
+        working-directory: cloud
+      - name: Initialize isolated local D1
+        run: npx wrangler d1 execute pantheon-workhub --local --file=schema.sql
+        working-directory: cloud
+      - name: Start local Cloudflare runtime
+        run: |
+          SECRET="$(openssl rand -hex 32)"
+          printf 'WORKHUB_TOKEN=%s\n' "$SECRET" > .dev.vars
+          printf 'SMOKE_TOKEN=%s\n' "$SECRET" >> "$GITHUB_ENV"
+          nohup npx wrangler dev --local --ip 127.0.0.1 --port 8789 > /tmp/workhub-wrangler.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl --silent --fail http://127.0.0.1:8789/health > /dev/null; then exit 0; fi
+            sleep 2
+          done
+          cat /tmp/workhub-wrangler.log
+          exit 1
+        working-directory: cloud
+      - name: Run real Workers and D1 smoke E2E
+        run: |
+          node tests/smoke.mjs || { cat /tmp/workhub-wrangler.log; exit 1; }
+        working-directory: cloud
+      - name: Verify original WorkHub health and API authorization
+        run: |
+          curl --silent --show-error --fail --max-time 20 \
+            https://phatheon-workhub.pureekangraw.workers.dev/health \
+            | grep -F '"ok":true'
+          code="$(curl --silent --show-error --max-time 20 \
+            -o /dev/null -w '%{http_code}' \
+            -X POST -H 'content-type: application/json' \
+            --data '{"intent":"LIST_TASKS"}' \
+            https://phatheon-workhub.pureekangraw.workers.dev/v1/intent)"
+          test "$code" = "401"
+      - name: Verify production Factory service binding handshake
+        run: |
+          # The public /health endpoint reports only sanitized connectivity;
+          # read/write endpoints still require the WorkHub owner secret.
+          result="$(curl --silent --show-error --fail --max-time 20 https://phatheon-workhub.pureekangraw.workers.dev/health)"
+          echo "$result" | grep -F '"service":"pantheon-workhub"'
+          echo "$result" | grep -F '"connection":"CONNECTED"'
+          echo "$result" | grep -F '"service":"factory-district"'
+          echo "$result" | grep -F '"dispatch_enabled":'
+
