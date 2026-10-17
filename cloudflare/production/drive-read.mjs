@@ -72,9 +72,10 @@ async function inScope(id,roots,token,fetcher){
 }
 const fileId=i=>typeof i==="string"&&ID.test(i);
 export async function runDriveTool(name,args={},env={},fetcher=fetch){
-  if(!["light_drive_list","light_drive_file"].includes(name))return bad("UNKNOWN_DRIVE_TOOL");
+  if(!["light_drive_roots","light_drive_list","light_drive_file"].includes(name))return bad("UNKNOWN_DRIVE_TOOL");
   const roots=allowed(env.PANTHEON_DRIVE_ALLOWED_FOLDERS);
   if(!roots.size)return bad("DRIVE_FOLDER_ALLOWLIST_NOT_CONFIGURED",503);
+  if(name==="light_drive_roots")return shape(args,[])?success({source:"google_drive",folder_ids:[...roots]}):bad("INVALID_INPUT");
   if(name==="light_drive_list"){
     if(!shape(args,["folder_id","query","limit"])||
        (args.folder_id!==undefined&&!fileId(args.folder_id))||
