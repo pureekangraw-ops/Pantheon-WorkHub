@@ -7,3 +7,7 @@ dependencies = []
 
 [project.scripts]
 pantheon-workhub = "pantheon_workhub.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["pantheon_workhub*"]
+exclude = ["cloudflare*", "tests*"]
