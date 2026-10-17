@@ -1,4 +1,4 @@
-// Google Drive read-only bridge. OAuth credentials stay only in PANTHEON.
+// Google Drive scoped read/write bridge. OAuth credentials stay only in PANTHEON.
 // Folder allowlists are mandatory, and every file is checked against them.
 const ID=/^[a-zA-Z0-9_-]{12,100}$/;
 const allowed=v=>new Set(String(v||"").split(",").map(x=>x.trim()).filter(x=>ID.test(x)));
@@ -83,6 +83,7 @@ export async function runDriveTool(name,args={},env={},fetcher=fetch){
     if(isCreate?(!fileId(args.folder_id)||typeof args.name!=="string"||!args.name.trim()||args.name.length>180):
        (!fileId(args.file_id)||(isUpdate?false:!fileId(args.folder_id))))return bad("INVALID_INPUT");
     if((isCreate||isUpdate)&&(typeof args.text!=="string"||new TextEncoder().encode(args.text).length>60000))return bad("INVALID_INPUT");
+    if(isCreate&&args.mime_type==="application/vnd.google-apps.folder"&&args.text!=="")return bad("INVALID_INPUT");
     if(isCreate&&args.mime_type!==undefined&&!["text/plain","text/markdown","text/csv","application/json","application/vnd.google-apps.folder"].includes(args.mime_type))return bad("INVALID_INPUT");
     try{
       const token=await googleToken(env,fetcher);
@@ -102,10 +103,10 @@ export async function runDriveTool(name,args={},env={},fetcher=fetch){
         const folder=mime==="application/vnd.google-apps.folder";
         const meta={name:args.name.trim(),parents:[args.folder_id],mimeType:mime};
         if(folder){url="https://www.googleapis.com/drive/v3/files?fields=id,name,mimeType,parents";options={method:"POST",headers:{...headers,"content-type":"application/json"},body:JSON.stringify(meta)};}
-        else{const boundary="pantheon_drive_boundary";
+        else{const boundary="pantheon_"+crypto.randomUUID().replaceAll("-","");
           url="https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,mimeType,parents";
           options={method:"POST",headers:{...headers,"content-type":"multipart/related; boundary="+boundary},body:"--"+boundary+"\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n"+JSON.stringify(meta)+"\r\n--"+boundary+"\r\nContent-Type: "+mime+"; charset=UTF-8\r\n\r\n"+args.text+"\r\n--"+boundary+"--"};}
-      }else if(isUpdate){url="https://www.googleapis.com/upload/drive/v3/files/"+encodeURIComponent(args.file_id)+"?uploadType=media&fields=id,name,mimeType,parents";options={method:"PATCH",headers:{...headers,"content-type":"text/plain; charset=UTF-8"},body:args.text};}
+      }else if(isUpdate){url="https://www.googleapis.com/upload/drive/v3/files/"+encodeURIComponent(args.file_id)+"?uploadType=media&fields=id,name,mimeType,parents";options={method:"PATCH",headers:{...headers,"content-type":"application/octet-stream"},body:args.text};}
       else{const item=await metadata(args.file_id,token,fetcher);const q=new URLSearchParams({addParents:args.folder_id,removeParents:item.parents[0],fields:"id,name,mimeType,parents"});url="https://www.googleapis.com/drive/v3/files/"+encodeURIComponent(args.file_id)+"?"+q;options={method:"PATCH",headers};}
       const raw=await readApi(url,options,fetcher);
       const result=JSON.parse(raw);
@@ -130,6 +131,10 @@ export async function runDriveTool(name,args={},env={},fetcher=fetch){
       const params=new URLSearchParams({q,fields:"nextPageToken,files(id,name,mimeType,webViewLink,modifiedTime,size)",pageSize:String(args.limit||20),orderBy:"modifiedTime desc"});
       const data=await driveGet("files?"+params,token,fetcher);
       if(!Array.isArray(data.files))throw Error("DRIVE_INVALID_RESPONSE");
+      // Never trust list results without checking every returned item.
+      for(const entry of data.files){
+        if(!fileId(entry.id)||!(await inScope(entry.id,roots,token,fetcher)))throw Error("DRIVE_LIST_SCOPE_VIOLATION");
+      }
       return success({source:"google_drive",folder_id:folder,files:data.files.slice(0,30).map(f=>({
         id:f.id,name:f.name,mimeType:f.mimeType,url:f.webViewLink||null,modifiedTime:f.modifiedTime||null,size:f.size||null
       })),has_more:!!data.nextPageToken});
