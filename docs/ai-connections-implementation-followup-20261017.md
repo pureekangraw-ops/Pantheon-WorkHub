@@ -33,3 +33,11 @@ Implementing collaborator login and BIG-controlled grants requires an explicit i
 - GO Brain and LIGHT BOOK repository contracts: **SOURCE-VERIFIED**.
 - GO/LIGHT live integration to PANTHEON, human multi-user auth, per-capability enforcement, and cross-service audit trail: **UNKNOWN / NOT VERIFIED**.
 - No merge, deployment, OAuth grant, secret change, or permission change was performed.
+
+## Preview build vs production deployment readback
+
+- Cloudflare Build `06fe5c17-5dee-43af-a123-da75c5ede423` completed successfully for GitHub branch `docs/ai-connections-hub-20261017`, exact commit `58cfe71529266735804331fdcbc556ae58e956a1`. Build metadata identifies `build_trigger_source=push_event`, `provider_type=github`, and deploy command `npx wrangler preview --config cloudflare/production/wrangler.jsonc`. Cloudflare returned no `preview_url`; no functional Preview test was possible from this evidence.
+- Read-only Cloudflare deployment list still shows latest production deployment `584f7438-5d33-41dd-ae1d-634e1ba9cc31`, created `2026-10-15T12:23:53.974Z`, serving version `9bf7c851-0e58-41b0-a311-2336299d7461` at 100%. The PR build is a Preview command, not a production deployment.
+- Read-only version detail for production version `9bf7c851-0e58-41b0-a311-2336299d7461` (version 36) contains a script ETag and deploy source `api`, but no commit/build/Git/SHA metadata. Therefore the deployed Worker source commit remains **UNKNOWN**; its version UUID is not a Git SHA.
+
+This readback does not change or authorize deployment. The PR remains open and draft.
