@@ -10,7 +10,7 @@ async function dashboard(){
 
 test('AI Connections profiles and disabled Review Queue disclose verification gaps',async()=>{
  const {html}=await dashboard();
- for(const text of ['Review Queue','AI Connections','AI Runtime','GO Brain','LIGHT BOOK','HERMES','UNKNOWN · NOT VERIFIED','No verified PANTHEON server-side GitHub or GitLab PR/MR connector','not fabricated','task-level permissions']) assert.ok(html.includes(text),`missing UI assertion text: ${text}`);
+ for(const text of ['Review Queue','AI Connections','AI Runtime','GO Brain','LIGHT BOOK','HERMES','UNKNOWN · NOT VERIFIED','No verified PANTHEON server-side GitHub or GitLab PR/MR connector','not fabricated','task-level permissions','brain-owner','brain_search','LIGHT_BOOKMARK_TOKEN','health-only','WORKHUB_TOKEN','cloud-owner','Per-human login, roles, and per-task grants are not implemented here']) assert.ok(html.includes(text),`missing UI assertion text: ${text}`);
  assert.match(html,/<section id="view-review" class="view-panel">[\s\S]*?Unavailable — read-only connector not verified/);
  assert.match(html,/<h3>LIGHT<\/h3>[\s\S]*?LIGHT BOOK/);
 });
