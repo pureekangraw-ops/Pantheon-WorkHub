@@ -3,8 +3,11 @@ on:
   pull_request:
     paths:
       - 'cloudflare/production/light-bridge.mjs'
+      - 'cloudflare/production/drive-read.mjs'
+      - 'cloudflare/production/test/drive-read.test.mjs'
       - 'cloudflare/production/owner-entrypoint.mjs'
       - 'cloudflare/production/test/light-bridge.test.mjs'
+      - 'cloudflare/production/test/drive-read.test.mjs'
       - '.github/workflows/light-bridge-tests.yml'
   push:
     branches:
@@ -23,4 +26,4 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --test cloudflare/production/test/light-bridge.test.mjs
+      - run: node --test cloudflare/production/test/light-bridge.test.mjs cloudflare/production/test/drive-read.test.mjs
