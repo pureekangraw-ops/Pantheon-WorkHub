@@ -6,3 +6,9 @@ export class OwnerBridge extends WorkerEntrypoint {
  async fetch(){return new Response('Not found',{status:404});}
  async ownerCall(args){return ownerBridgeCall(this.env,workhub,args);}
 }
+
+import {storefrontCall} from './storefront-bridge.mjs';
+export class StorefrontBridge extends WorkerEntrypoint {
+ async fetch(){return new Response('Not found',{status:404});}
+ async storefrontCall(args){return storefrontCall(this.env,args);}
+}

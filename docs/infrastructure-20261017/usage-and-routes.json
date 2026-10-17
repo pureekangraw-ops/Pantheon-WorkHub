@@ -1,0 +1,195 @@
+{
+  "routes": {
+    "result": [],
+    "success": true,
+    "errors": [],
+    "messages": [],
+    "status": 200
+  },
+  "queues": {
+    "result": [
+      {
+        "queue_id": "2914bb59869d4535899cb95cac68b0ea",
+        "queue_name": "pixie-delivery-dead-v1",
+        "settings": {
+          "delivery_delay": 0,
+          "message_retention_period": 345600
+        },
+        "created_on": "2026-10-10T05:34:34.529082Z",
+        "modified_on": "2026-10-10T05:34:34.529082Z",
+        "producers_total_count": 0,
+        "producers": [],
+        "consumers_total_count": 0,
+        "consumers": []
+      },
+      {
+        "queue_id": "1d793510eb394e148502c9287936be5b",
+        "queue_name": "pixie-delivery-v1",
+        "settings": {
+          "delivery_delay": 0,
+          "message_retention_period": 345600
+        },
+        "created_on": "2026-10-10T01:44:03.301894Z",
+        "modified_on": "2026-10-10T01:44:03.301894Z",
+        "producers_total_count": 1,
+        "producers": [
+          {
+            "script": "greenhouse-transport",
+            "type": "worker"
+          }
+        ],
+        "consumers_total_count": 1,
+        "consumers": [
+          {
+            "script": "greenhouse-transport",
+            "dead_letter_queue": "pixie-delivery-dead-v1",
+            "settings": {
+              "batch_size": 1,
+              "max_retries": 3,
+              "max_wait_time_ms": 1000,
+              "max_concurrency": 1,
+              "retry_delay": 30
+            },
+            "consumer_id": "38df84a1da3f49d6a7a652797f16a28d",
+            "type": "worker"
+          }
+        ]
+      }
+    ],
+    "success": true,
+    "errors": null,
+    "messages": null,
+    "result_info": {
+      "page": 1,
+      "per_page": 100,
+      "count": 2,
+      "total_count": 2,
+      "total_pages": 1
+    },
+    "status": 200
+  },
+  "subdomain": {
+    "result": {
+      "subdomain": "pureekangraw"
+    },
+    "success": true,
+    "errors": [],
+    "messages": [],
+    "status": 200
+  },
+  "usage": {
+    "success": true,
+    "status": 200,
+    "result": {
+      "viewer": {
+        "accounts": [
+          {
+            "workersInvocationsAdaptive": [
+              {
+                "dimensions": {
+                  "scriptName": "pantheon-workhub-staging"
+                },
+                "sum": {
+                  "errors": 0,
+                  "requests": 71
+                }
+              },
+              {
+                "dimensions": {
+                  "scriptName": "phatheon-workhub"
+                },
+                "sum": {
+                  "errors": 0,
+                  "requests": 401
+                }
+              },
+              {
+                "dimensions": {
+                  "scriptName": "observatory-web"
+                },
+                "sum": {
+                  "errors": 0,
+                  "requests": 67
+                }
+              },
+              {
+                "dimensions": {
+                  "scriptName": "greenhouse-transport"
+                },
+                "sum": {
+                  "errors": 0,
+                  "requests": 4686
+                }
+              },
+              {
+                "dimensions": {
+                  "scriptName": "go-hub"
+                },
+                "sum": {
+                  "errors": 0,
+                  "requests": 6058
+                }
+              },
+              {
+                "dimensions": {
+                  "scriptName": "__unknown__"
+                },
+                "sum": {
+                  "errors": 0,
+                  "requests": 1
+                }
+              },
+              {
+                "dimensions": {
+                  "scriptName": "factory-district"
+                },
+                "sum": {
+                  "errors": 0,
+                  "requests": 110
+                }
+              },
+              {
+                "dimensions": {
+                  "scriptName": "go-together"
+                },
+                "sum": {
+                  "errors": 3,
+                  "requests": 670
+                }
+              },
+              {
+                "dimensions": {
+                  "scriptName": "metropolis"
+                },
+                "sum": {
+                  "errors": 0,
+                  "requests": 2312
+                }
+              },
+              {
+                "dimensions": {
+                  "scriptName": "light-bookmark"
+                },
+                "sum": {
+                  "errors": 0,
+                  "requests": 838
+                }
+              },
+              {
+                "dimensions": {
+                  "scriptName": "yggmetro-web"
+                },
+                "sum": {
+                  "errors": 0,
+                  "requests": 4104
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "errors": [],
+    "messages": []
+  }
+}

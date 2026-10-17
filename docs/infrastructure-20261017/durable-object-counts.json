@@ -1,0 +1,182 @@
+[
+  {
+    "namespace_id": "dd0787a48dc642e1affb685e8bf7e210",
+    "name": "go-hub_HephaestusForeman",
+    "preview": false,
+    "objects": 1,
+    "objects_with_stored_data": 1,
+    "pagination_complete": true,
+    "pages": 2
+  },
+  {
+    "namespace_id": "a1874e7a33964cb7804b7e3332acb1ba",
+    "name": "go-hub_GoHubFactoryState",
+    "preview": false,
+    "objects": 198,
+    "objects_with_stored_data": 160,
+    "pagination_complete": true,
+    "pages": 2
+  },
+  {
+    "namespace_id": "8c59e28d9df8400d95cd9e0f3643bfda",
+    "name": "go-hub_ObserverSessionRegistry",
+    "preview": false,
+    "objects": 1,
+    "objects_with_stored_data": 0,
+    "pagination_complete": true,
+    "pages": 2
+  },
+  {
+    "namespace_id": "885a932240d24c79bda54c0ef38032e3",
+    "name": "go-hub_GoHubCentreState",
+    "preview": false,
+    "objects": 492,
+    "objects_with_stored_data": 461,
+    "pagination_complete": true,
+    "pages": 2
+  },
+  {
+    "namespace_id": "1044959d62a74ec8b83282903a0fcc77",
+    "name": "go-hub_LighthouseControlPortSessionRegistry",
+    "preview": false,
+    "objects": 1,
+    "objects_with_stored_data": 1,
+    "pagination_complete": true,
+    "pages": 2
+  },
+  {
+    "namespace_id": "94020d8ad5114b25a73fdcccb828b009",
+    "name": "go-hub_GoHubGlobalAuditLog",
+    "preview": false,
+    "objects": 1,
+    "objects_with_stored_data": 1,
+    "pagination_complete": true,
+    "pages": 2
+  },
+  {
+    "namespace_id": "dcbb914683b8460fa44ff86f07c03876",
+    "name": "go-hub_GoHubCounterState",
+    "preview": false,
+    "objects": 242,
+    "objects_with_stored_data": 240,
+    "pagination_complete": true,
+    "pages": 2
+  },
+  {
+    "namespace_id": "2f8a94b9681c45b9a448a25db4be568f",
+    "name": "go-hub_GoHubCounterDispatchState",
+    "preview": false,
+    "objects": 240,
+    "objects_with_stored_data": 240,
+    "pagination_complete": true,
+    "pages": 2
+  },
+  {
+    "namespace_id": "5d902fd236624787add0f7c48c0b86a0",
+    "name": "go-hub_GoHubNotionLightState",
+    "preview": false,
+    "objects": 1,
+    "objects_with_stored_data": 1,
+    "pagination_complete": true,
+    "pages": 2
+  },
+  {
+    "namespace_id": "bb63383d28104d728820c9b6627d13b3",
+    "name": "go-hub_GoHubCounterInboxState",
+    "preview": false,
+    "objects": 3,
+    "objects_with_stored_data": 3,
+    "pagination_complete": true,
+    "pages": 2
+  },
+  {
+    "namespace_id": "813a36c56ddf46d4b262408ef5c19be6",
+    "name": "go-hub_GoHubMaintenanceState",
+    "preview": false,
+    "objects": 1,
+    "objects_with_stored_data": 1,
+    "pagination_complete": true,
+    "pages": 2
+  },
+  {
+    "namespace_id": "10aa2a62910c4558a9dc08003f21e0bd",
+    "name": "go-hub_GoHubBroadcastState",
+    "preview": false,
+    "objects": 1,
+    "objects_with_stored_data": 0,
+    "pagination_complete": true,
+    "pages": 2
+  },
+  {
+    "namespace_id": "d87f91397d744d48ad19a9ff3e593b8c",
+    "name": "go-hub_GoHubPixieMonitorState",
+    "preview": false,
+    "objects": 1,
+    "objects_with_stored_data": 1,
+    "pagination_complete": true,
+    "pages": 2
+  },
+  {
+    "namespace_id": "1816cd3431b343e0a679645071115b65",
+    "name": "go-hub_FactoryEyeSessionRegistry",
+    "preview": false,
+    "objects": 1,
+    "objects_with_stored_data": 1,
+    "pagination_complete": true,
+    "pages": 2
+  },
+  {
+    "namespace_id": "6ed505250e1b4f66a10e8c0bc9640c64",
+    "name": "go-hub_OfficeRateLimitState",
+    "preview": false,
+    "objects": 6,
+    "objects_with_stored_data": 6,
+    "pagination_complete": true,
+    "pages": 2
+  },
+  {
+    "namespace_id": "9334ee9286bf4f84a0372a2e3d11af45",
+    "name": "go-hub_pixie-visual-full-spec-v1-living-scene_HandoffLedger",
+    "preview": true,
+    "objects": 0,
+    "objects_with_stored_data": 0,
+    "pagination_complete": true,
+    "pages": 1
+  },
+  {
+    "namespace_id": "34aef7e6eb4d46659f261a8ef405af27",
+    "name": "go-hub_OfficePasskeyState",
+    "preview": false,
+    "objects": 1,
+    "objects_with_stored_data": 1,
+    "pagination_complete": true,
+    "pages": 2
+  },
+  {
+    "namespace_id": "1f8d657cf0174f53a5c437ef48640e2f",
+    "name": "go-hub_lab-retrieval-resolver-20261003_HandoffLedger",
+    "preview": true,
+    "objects": 0,
+    "objects_with_stored_data": 0,
+    "pagination_complete": true,
+    "pages": 1
+  },
+  {
+    "namespace_id": "81675872e8084d77bdbf86395208d67d",
+    "name": "go-hub_pixie-arsenal-contract-v1_HandoffLedger",
+    "preview": true,
+    "objects": 0,
+    "objects_with_stored_data": 0,
+    "pagination_complete": true,
+    "pages": 1
+  },
+  {
+    "namespace_id": "6d8fe60f71fd45528bd37c49586ebda3",
+    "name": "go-hub_fix-pixie-visual-crew-runtime-migration-20261003_HandoffLedger",
+    "preview": true,
+    "objects": 0,
+    "objects_with_stored_data": 0,
+    "pagination_complete": true,
+    "pages": 1
+  }
+]

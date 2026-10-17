@@ -1,0 +1,300 @@
+{
+  "doRequests": {
+    "success": true,
+    "status": 200,
+    "result": {
+      "viewer": {
+        "accounts": [
+          {
+            "durableObjectsInvocationsAdaptiveGroups": [
+              {
+                "dimensions": {
+                  "isPreview": 0,
+                  "namespaceId": "a1874e7a33964cb7804b7e3332acb1ba",
+                  "scriptName": "go-hub"
+                },
+                "sum": {
+                  "errors": 0,
+                  "requests": 5,
+                  "wallTime": 6988
+                }
+              },
+              {
+                "dimensions": {
+                  "isPreview": 0,
+                  "namespaceId": "94020d8ad5114b25a73fdcccb828b009",
+                  "scriptName": "go-hub"
+                },
+                "sum": {
+                  "errors": 31886,
+                  "requests": 381713,
+                  "wallTime": 199033049345
+                }
+              },
+              {
+                "dimensions": {
+                  "isPreview": 0,
+                  "namespaceId": "885a932240d24c79bda54c0ef38032e3",
+                  "scriptName": "go-hub"
+                },
+                "sum": {
+                  "errors": 29000,
+                  "requests": 622483,
+                  "wallTime": 313518771792
+                }
+              },
+              {
+                "dimensions": {
+                  "isPreview": 0,
+                  "namespaceId": "1816cd3431b343e0a679645071115b65",
+                  "scriptName": "go-hub"
+                },
+                "sum": {
+                  "errors": 0,
+                  "requests": 6002,
+                  "wallTime": 225054897
+                }
+              },
+              {
+                "dimensions": {
+                  "isPreview": 0,
+                  "namespaceId": "1044959d62a74ec8b83282903a0fcc77",
+                  "scriptName": "go-hub"
+                },
+                "sum": {
+                  "errors": 279,
+                  "requests": 28455,
+                  "wallTime": 184456833895
+                }
+              },
+              {
+                "dimensions": {
+                  "isPreview": 0,
+                  "namespaceId": "10aa2a62910c4558a9dc08003f21e0bd",
+                  "scriptName": "go-hub"
+                },
+                "sum": {
+                  "errors": 0,
+                  "requests": 1,
+                  "wallTime": 2812
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "errors": [],
+    "messages": []
+  },
+  "doCompute": {
+    "success": true,
+    "status": 200,
+    "result": {
+      "viewer": {
+        "accounts": [
+          {
+            "durableObjectsPeriodicGroups": [
+              {
+                "dimensions": {
+                  "namespaceId": "a1874e7a33964cb7804b7e3332acb1ba"
+                },
+                "sum": {
+                  "cpuTime": 2072,
+                  "duration": 0.000868352,
+                  "storageReadUnits": 0,
+                  "storageWriteUnits": 0
+                }
+              },
+              {
+                "dimensions": {
+                  "namespaceId": "10aa2a62910c4558a9dc08003f21e0bd"
+                },
+                "sum": {
+                  "cpuTime": 986,
+                  "duration": 0.000348032,
+                  "storageReadUnits": 0,
+                  "storageWriteUnits": 0
+                }
+              },
+              {
+                "dimensions": {
+                  "namespaceId": "1816cd3431b343e0a679645071115b65"
+                },
+                "sum": {
+                  "cpuTime": 6438476,
+                  "duration": 21.441882752,
+                  "storageReadUnits": 0,
+                  "storageWriteUnits": 0
+                }
+              },
+              {
+                "dimensions": {
+                  "namespaceId": "885a932240d24c79bda54c0ef38032e3"
+                },
+                "sum": {
+                  "cpuTime": 1133211208,
+                  "duration": 39863.147296639996,
+                  "storageReadUnits": 0,
+                  "storageWriteUnits": 0
+                }
+              },
+              {
+                "dimensions": {
+                  "namespaceId": "94020d8ad5114b25a73fdcccb828b009"
+                },
+                "sum": {
+                  "cpuTime": 108332574810,
+                  "duration": 16749.860670463997,
+                  "storageReadUnits": 0,
+                  "storageWriteUnits": 0
+                }
+              },
+              {
+                "dimensions": {
+                  "namespaceId": "1044959d62a74ec8b83282903a0fcc77"
+                },
+                "sum": {
+                  "cpuTime": 3490123747,
+                  "duration": 23636.843608704006,
+                  "storageReadUnits": 0,
+                  "storageWriteUnits": 0
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "errors": [],
+    "messages": []
+  },
+  "doStorage": {
+    "success": true,
+    "status": 200,
+    "result": {
+      "viewer": {
+        "accounts": [
+          {
+            "durableObjectsSqlStorageGroups": [
+              {
+                "dimensions": {
+                  "namespaceId": "813a36c56ddf46d4b262408ef5c19be6"
+                },
+                "max": {
+                  "storedBytes": 16384
+                }
+              },
+              {
+                "dimensions": {
+                  "namespaceId": "dcbb914683b8460fa44ff86f07c03876"
+                },
+                "max": {
+                  "storedBytes": 4677632
+                }
+              },
+              {
+                "dimensions": {
+                  "namespaceId": "1044959d62a74ec8b83282903a0fcc77"
+                },
+                "max": {
+                  "storedBytes": 647168
+                }
+              },
+              {
+                "dimensions": {
+                  "namespaceId": "d87f91397d744d48ad19a9ff3e593b8c"
+                },
+                "max": {
+                  "storedBytes": 57344
+                }
+              },
+              {
+                "dimensions": {
+                  "namespaceId": "2f8a94b9681c45b9a448a25db4be568f"
+                },
+                "max": {
+                  "storedBytes": 5259264
+                }
+              },
+              {
+                "dimensions": {
+                  "namespaceId": "5d902fd236624787add0f7c48c0b86a0"
+                },
+                "max": {
+                  "storedBytes": 12288
+                }
+              },
+              {
+                "dimensions": {
+                  "namespaceId": "885a932240d24c79bda54c0ef38032e3"
+                },
+                "max": {
+                  "storedBytes": 10969088
+                }
+              },
+              {
+                "dimensions": {
+                  "namespaceId": "1816cd3431b343e0a679645071115b65"
+                },
+                "max": {
+                  "storedBytes": 503808
+                }
+              },
+              {
+                "dimensions": {
+                  "namespaceId": "94020d8ad5114b25a73fdcccb828b009"
+                },
+                "max": {
+                  "storedBytes": 336932860
+                }
+              },
+              {
+                "dimensions": {
+                  "namespaceId": "a1874e7a33964cb7804b7e3332acb1ba"
+                },
+                "max": {
+                  "storedBytes": 5332992
+                }
+              },
+              {
+                "dimensions": {
+                  "namespaceId": "34aef7e6eb4d46659f261a8ef405af27"
+                },
+                "max": {
+                  "storedBytes": 12288
+                }
+              },
+              {
+                "dimensions": {
+                  "namespaceId": "bb63383d28104d728820c9b6627d13b3"
+                },
+                "max": {
+                  "storedBytes": 512000
+                }
+              },
+              {
+                "dimensions": {
+                  "namespaceId": "dd0787a48dc642e1affb685e8bf7e210"
+                },
+                "max": {
+                  "storedBytes": 28672
+                }
+              },
+              {
+                "dimensions": {
+                  "namespaceId": "6ed505250e1b4f66a10e8c0bc9640c64"
+                },
+                "max": {
+                  "storedBytes": 73728
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "errors": [],
+    "messages": []
+  }
+}

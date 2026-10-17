@@ -1,0 +1,74 @@
+
+> yggmetro-web@0.1.0 test
+> node --test tests/*.test.cjs
+
+✔ METRO Android is a separate Capacitor app and does not replace Vault (0.955721ms)
+✔ METRO mobile exposes SHOP OFFICE PRISM and contextual SPECTRUM (0.381201ms)
+✔ METRO mobile stores only route URLs and no provider secret fields (0.432445ms)
+✔ METRO Android installs an owner-enabled floating overlay bubble contract (0.322939ms)
+✔ PRISM stays inside METRO and never becomes the connection gateway (1.145376ms)
+(node:1535) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/pantheon-rewire/yggmetro-web/src/index.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/pantheon-rewire/yggmetro-web/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ PANTHEON routing fails closed without session key instead of falling back to GO Hub (39.091976ms)
+✔ trusted session principal reaches only named RPC and never leaks key to customer (9.268036ms)
+✔ forged cookies and cross-site origins do not reach receiver (1.285667ms)
+✔ write failure never retries against legacy service (2.269622ms)
+✔ public homepage and inference configuration remain available without session secret (0.802498ms)
+(node:1547) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/pantheon-rewire/yggmetro-web/src/index.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/pantheon-rewire/yggmetro-web/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ shop gives all six products their own public sales page without exposing paid Notion files (33.823121ms)
+✔ unknown product returns 404 and finance never offers an unconfigured checkout (1.439348ms)
+(node:1555) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/pantheon-rewire/yggmetro-web/src/index.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/pantheon-rewire/yggmetro-web/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ public event route forwards observations through existing GO_HUB binding (30.980745ms)
+✔ unavailable event transport does not claim saved (0.91668ms)
+✔ public event intake rejects payment claims (0.676204ms)
+✔ storefront observer emits the missing funnel stages without customer content (3.477932ms)
+✔ checkout request forwards identity only and preserves payment authority in GO Hub (3.227158ms)
+✔ checkout request rejects customer payment truth and card-like data before transport (1.867185ms)
+✔ provider-confirmed status requires provider evidence in owner readback (1.275142ms)
+✔ event backlog cannot exhaust the customer brief budget (7.289549ms)
+✔ confirmed brief surfaces the canonical GO Hub Work (1.271389ms)
+✔ storefront service cards preserve entry context for SPECTRUM (0.663811ms)
+✔ SPECTRUM client supports all storefront service families and timing stage (0.61199ms)
+✔ brief bridge forwards storefront service context without creating authority (0.780857ms)
+(node:1563) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/pantheon-rewire/yggmetro-web/src/index.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/pantheon-rewire/yggmetro-web/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ GO chat appears only on shop pages, including detail pages (33.121348ms)
+✔ public catalog chat answers from shop data without provider or payment claims (4.086627ms)
+✔ shop assistant input is bounded, JSON only, and method limited (1.065206ms)
+(node:1571) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/pantheon-rewire/yggmetro-web/src/index.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/pantheon-rewire/yggmetro-web/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ ROOT CAUSES embed is rendered only on shop.yggmetro.com (36.247088ms)
+(node:1579) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/pantheon-rewire/yggmetro-web/src/index.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/pantheon-rewire/yggmetro-web/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ 30-fixture conversation contract keeps critical intents deterministic and public-safe (10.952893ms)
+✔ internal terms and system-like templates from model output are stripped before reaching customer (0.488645ms)
+✔ handoff packet carries context without inventing commercial truth (1.139867ms)
+✔ client page inline scripts compile and mobile chat stays compact (25.857533ms)
+✔ GO whisper and takeover use durable budget gate before model calls (3.975442ms)
+✔ GO budget refusal prevents expensive provider call (1.339678ms)
+✔ client wires whisper-before-takeover and short-lived GO state (0.750364ms)
+✔ team call prechecks with GO before durable handoff and resumes handoff after takeover (0.851567ms)
+✔ mobile client stays within viewport and team CTA is contextual/secondary (0.915628ms)
+✔ responsive sales surfaces keep mobile actions tappable and progress readable (2.064563ms)
+ℹ tests 38
+ℹ suites 0
+ℹ pass 38
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 602.609802

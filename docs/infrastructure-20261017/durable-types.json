@@ -1,0 +1,248 @@
+{
+  "units": [
+    {
+      "description": "Sum of active time - microseconds",
+      "name": "activeTime"
+    },
+    {
+      "description": "Sum of CPU time - microseconds",
+      "name": "cpuTime"
+    },
+    {
+      "description": "Sum of Duration - GB*s",
+      "name": "duration"
+    }
+  ],
+  "types": {
+    "success": true,
+    "status": 200,
+    "result": {
+      "viewer": {
+        "accounts": [
+          {
+            "durableObjectsInvocationsAdaptiveGroups": [
+              {
+                "dimensions": {
+                  "namespaceId": "885a932240d24c79bda54c0ef38032e3",
+                  "scriptName": "go-hub",
+                  "status": "scriptThrewException",
+                  "type": "alarm"
+                },
+                "sum": {
+                  "errors": 24650,
+                  "requests": 24650
+                }
+              },
+              {
+                "dimensions": {
+                  "namespaceId": "1044959d62a74ec8b83282903a0fcc77",
+                  "scriptName": "go-hub",
+                  "status": "success",
+                  "type": "alarm"
+                },
+                "sum": {
+                  "errors": 0,
+                  "requests": 28175
+                }
+              },
+              {
+                "dimensions": {
+                  "namespaceId": "885a932240d24c79bda54c0ef38032e3",
+                  "scriptName": "go-hub",
+                  "status": "scriptThrewException",
+                  "type": "http"
+                },
+                "sum": {
+                  "errors": 1,
+                  "requests": 1
+                }
+              },
+              {
+                "dimensions": {
+                  "namespaceId": "1816cd3431b343e0a679645071115b65",
+                  "scriptName": "go-hub",
+                  "status": "success",
+                  "type": "http"
+                },
+                "sum": {
+                  "errors": 0,
+                  "requests": 6002
+                }
+              },
+              {
+                "dimensions": {
+                  "namespaceId": "885a932240d24c79bda54c0ef38032e3",
+                  "scriptName": "go-hub",
+                  "status": "clientDisconnected",
+                  "type": "http"
+                },
+                "sum": {
+                  "errors": 1,
+                  "requests": 1
+                }
+              },
+              {
+                "dimensions": {
+                  "namespaceId": "1044959d62a74ec8b83282903a0fcc77",
+                  "scriptName": "go-hub",
+                  "status": "success",
+                  "type": "http"
+                },
+                "sum": {
+                  "errors": 0,
+                  "requests": 1
+                }
+              },
+              {
+                "dimensions": {
+                  "namespaceId": "1044959d62a74ec8b83282903a0fcc77",
+                  "scriptName": "go-hub",
+                  "status": "clientDisconnected",
+                  "type": "http"
+                },
+                "sum": {
+                  "errors": 5,
+                  "requests": 5
+                }
+              },
+              {
+                "dimensions": {
+                  "namespaceId": "885a932240d24c79bda54c0ef38032e3",
+                  "scriptName": "go-hub",
+                  "status": "success",
+                  "type": "alarm"
+                },
+                "sum": {
+                  "errors": 0,
+                  "requests": 327684
+                }
+              },
+              {
+                "dimensions": {
+                  "namespaceId": "94020d8ad5114b25a73fdcccb828b009",
+                  "scriptName": "go-hub",
+                  "status": "scriptThrewException",
+                  "type": "http"
+                },
+                "sum": {
+                  "errors": 1064,
+                  "requests": 1064
+                }
+              },
+              {
+                "dimensions": {
+                  "namespaceId": "1044959d62a74ec8b83282903a0fcc77",
+                  "scriptName": "go-hub",
+                  "status": "scriptThrewException",
+                  "type": "alarm"
+                },
+                "sum": {
+                  "errors": 9,
+                  "requests": 9
+                }
+              },
+              {
+                "dimensions": {
+                  "namespaceId": "94020d8ad5114b25a73fdcccb828b009",
+                  "scriptName": "go-hub",
+                  "status": "clientDisconnected",
+                  "type": "http"
+                },
+                "sum": {
+                  "errors": 3,
+                  "requests": 3
+                }
+              },
+              {
+                "dimensions": {
+                  "namespaceId": "885a932240d24c79bda54c0ef38032e3",
+                  "scriptName": "go-hub",
+                  "status": "success",
+                  "type": "http"
+                },
+                "sum": {
+                  "errors": 0,
+                  "requests": 265799
+                }
+              },
+              {
+                "dimensions": {
+                  "namespaceId": "885a932240d24c79bda54c0ef38032e3",
+                  "scriptName": "go-hub",
+                  "status": "clientDisconnected",
+                  "type": "alarm"
+                },
+                "sum": {
+                  "errors": 4348,
+                  "requests": 4348
+                }
+              },
+              {
+                "dimensions": {
+                  "namespaceId": "94020d8ad5114b25a73fdcccb828b009",
+                  "scriptName": "go-hub",
+                  "status": "exceededMemory",
+                  "type": "http"
+                },
+                "sum": {
+                  "errors": 30819,
+                  "requests": 30819
+                }
+              },
+              {
+                "dimensions": {
+                  "namespaceId": "a1874e7a33964cb7804b7e3332acb1ba",
+                  "scriptName": "go-hub",
+                  "status": "success",
+                  "type": "http"
+                },
+                "sum": {
+                  "errors": 0,
+                  "requests": 5
+                }
+              },
+              {
+                "dimensions": {
+                  "namespaceId": "1044959d62a74ec8b83282903a0fcc77",
+                  "scriptName": "go-hub",
+                  "status": "clientDisconnected",
+                  "type": "alarm"
+                },
+                "sum": {
+                  "errors": 265,
+                  "requests": 265
+                }
+              },
+              {
+                "dimensions": {
+                  "namespaceId": "94020d8ad5114b25a73fdcccb828b009",
+                  "scriptName": "go-hub",
+                  "status": "success",
+                  "type": "http"
+                },
+                "sum": {
+                  "errors": 0,
+                  "requests": 349827
+                }
+              },
+              {
+                "dimensions": {
+                  "namespaceId": "10aa2a62910c4558a9dc08003f21e0bd",
+                  "scriptName": "go-hub",
+                  "status": "success",
+                  "type": "http"
+                },
+                "sum": {
+                  "errors": 0,
+                  "requests": 1
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "errors": [],
+    "messages": []
+  }
+}

@@ -530,6 +530,7 @@ __name(markComplete, "markComplete");
 async function runTask(db, taskId) {
   const task = await getTask(db, taskId), runId = id("run"), timestamp = now();
   const executor = await stmt(db, "SELECT tool_name FROM actions WHERE task_id=?", taskId).first();
+  if (executor?.tool_name === "storefront.owner_review") throw new ApiError(409, "customer brief requires owner review; no execution authorized");
   if (executor?.tool_name !== "d1.create_text_artifact") throw new ApiError(409, "task requires Factory executor");
   if (task.status !== "QUEUED") throw new ApiError(409, "task is not QUEUED");
   const claim = await db.batch([
@@ -567,6 +568,7 @@ __name(runTask, "runTask");
 async function recover(db, taskId) {
   const task = await getTask(db, taskId);
   const executor = await stmt(db, "SELECT tool_name FROM actions WHERE task_id=?", taskId).first();
+  if (executor?.tool_name === "storefront.owner_review") throw new ApiError(409, "customer brief requires owner review; no execution authorized");
   if (executor?.tool_name !== "d1.create_text_artifact") throw new ApiError(409, "task requires Factory reconciliation");
   if (!["RUNNING", "NEEDS_RECONCILIATION"].includes(task.status)) throw new ApiError(409, "not recoverable");
   if (Date.now() - Date.parse(task.updated_at) < TIMING_WINDOW_MS) throw new ApiError(409, "run may still be active");
@@ -591,6 +593,7 @@ __name(recover, "recover");
 async function retry(db, taskId) {
   const task = await getTask(db, taskId);
   const executor = await stmt(db, "SELECT tool_name FROM actions WHERE task_id=?", taskId).first();
+  if (executor?.tool_name === "storefront.owner_review") throw new ApiError(409, "customer brief requires owner review; no execution authorized");
   if (executor?.tool_name !== "d1.create_text_artifact") throw new ApiError(409, "task requires Factory reconciliation");
   if (task.status !== "FAILED") throw new ApiError(409, "retry requires failed/no-effect recovery");
   const seen = await inspect(db, taskId);

@@ -1,0 +1,8 @@
+{
+  "source": "PANTHEON Observatory manual snapshot",
+  "upstream_status": 200,
+  "status": "NO_FRESH_SNAPSHOT",
+  "readAtEpochMs": 1792200262973,
+  "new_capture_triggered": false,
+  "acceptance": "BLOCKED: owner must manually send a fresh page to verify this workflow"
+}

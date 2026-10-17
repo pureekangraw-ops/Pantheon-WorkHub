@@ -1,0 +1,16 @@
+{
+  "observed_at": "2026-10-17 01:20:17 UTC",
+  "evidence_type": "EXISTING_PRODUCTION_RECEIPT_READBACK",
+  "new_execution": false,
+  "job": {
+    "task_id": "task_c56a8d23bda7413fbcec3734754f7da4",
+    "receipt_id": "receipt-482167aa-56f1-4c38-8713-8280b6c829cc",
+    "status": "COMPLETED",
+    "source_sha": "6f1aaa10b1e34be8b95d54dda9ae5362424aad60",
+    "result_sha256": "5fcdcf8f28514b05a8c09738ec896b4e81e829964201b8239ad78c31ebc8d8ca",
+    "updated_at": "2026-10-14T08:16:19.687Z",
+    "domainCompleted": true,
+    "domainVerified": true,
+    "productionAuthority": false
+  }
+}
