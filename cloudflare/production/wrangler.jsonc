@@ -23,5 +23,9 @@
         "database_id": "aea1361a-792f-4fa4-b60e-91c7e7493570"
       }
     ]
+  },
+  "vars": {
+    "LIGHT_BRIDGE_ENABLED": "true",
+    "LIGHT_BRIDGE_CREATE_ENABLED": "true"
   }
 }
