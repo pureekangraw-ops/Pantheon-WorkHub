@@ -1,0 +1,26 @@
+name: LIGHT PANTHEON Bridge Tests
+on:
+  pull_request:
+    paths:
+      - 'cloudflare/production/light-bridge.mjs'
+      - 'cloudflare/production/owner-entrypoint.mjs'
+      - 'cloudflare/production/test/light-bridge.test.mjs'
+      - '.github/workflows/light-bridge-tests.yml'
+  push:
+    branches:
+      - 'feat/light-work-bridge-*'
+    paths:
+      - 'cloudflare/production/light-bridge.mjs'
+      - 'cloudflare/production/owner-entrypoint.mjs'
+      - 'cloudflare/production/test/light-bridge.test.mjs'
+permissions:
+  contents: read
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test cloudflare/production/test/light-bridge.test.mjs

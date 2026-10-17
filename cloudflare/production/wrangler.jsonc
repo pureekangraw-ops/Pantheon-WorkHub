@@ -14,5 +14,18 @@
       "binding": "FACTORY",
       "service": "factory-district"
     }
-  ]
+  ],
+  "previews": {
+    "d1_databases": [
+      {
+        "binding": "DB",
+        "database_name": "pantheon-workhub-staging",
+        "database_id": "aea1361a-792f-4fa4-b60e-91c7e7493570"
+      }
+    ]
+  },
+  "vars": {
+    "LIGHT_BRIDGE_ENABLED": "true",
+    "LIGHT_BRIDGE_CREATE_ENABLED": "true"
+  }
 }
