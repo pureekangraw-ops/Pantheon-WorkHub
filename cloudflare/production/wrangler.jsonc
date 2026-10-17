@@ -14,5 +14,6 @@
       "binding": "FACTORY",
       "service": "factory-district"
     }
-  ]
+  ],
+  "previews": {}
 }
