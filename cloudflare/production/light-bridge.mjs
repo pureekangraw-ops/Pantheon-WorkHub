@@ -12,12 +12,14 @@ export async function lightBridgeCall(env,workhub,input){
   if(!input||typeof input!=="object"||Array.isArray(input))return bad("INVALID_REQUEST");
   // LIGHT reads approved Drive folders via PANTHEON's own Google OAuth credentials.
   // This entrypoint never exposes tokens or enables Drive writes.
-  if(input.operation==="drive_read"){
+  if(input.operation==="drive_read"||input.operation==="drive_write"){
     if(!keyset(input,["operation","name","args"])||
-      !["light_drive_roots","light_drive_list","light_drive_file"].includes(input.name)||
-      !keyset(input.args,["folder_id","file_id","query","limit"]))return bad("INVALID_DRIVE_REQUEST");
+      !["light_drive_roots","light_drive_list","light_drive_file","light_drive_create","light_drive_update","light_drive_move"].includes(input.name)||
+      (input.operation==="drive_read"&&["light_drive_create","light_drive_update","light_drive_move"].includes(input.name))||
+      (input.operation==="drive_write"&&!["light_drive_create","light_drive_update","light_drive_move"].includes(input.name))||
+      !keyset(input.args,["folder_id","file_id","query","limit","name","text","mime_type"]))return bad("INVALID_DRIVE_REQUEST");
     const response=await runDriveTool(input.name,input.args,env);
-    return {...response,caller:"LIGHT-BOOKMARK",capability:"LIGHT_DRIVE_READ"};
+    return {...response,caller:"LIGHT-BOOKMARK",capability:input.operation==="drive_write"?"LIGHT_DRIVE_WRITE":"LIGHT_DRIVE_READ"};
   }
   let call;
   switch(input.operation){
