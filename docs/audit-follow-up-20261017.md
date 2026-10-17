@@ -6,8 +6,8 @@ Scope: read-only repository/service inspection and local tests. No merge, deploy
 
 ### PANTHEON PR #12
 
-- PR #12 is open and marked draft. It changes one documentation file only (139 additions; no application code changes). Head: `9391fc1d532bb55a6774eb0366542271e7bb4fb2`; base `main`: `9cee6c2920c88acdfc98c78514108323731e5604`.
-- The PR's Cloudflare Workers Builds check failed on 2026-10-17. The check result available to this audit did not include build logs, so the failure cause is **unknown**. No production deployment was performed as part of this audit. [PR #12 checks](https://github.com/pureekangraw-ops/Pantheon-WorkHub/pull/12/checks)
+- PR #12 is open and marked draft. Before this follow-up, it changed one documentation file only (139 additions); this follow-up adds a second documentation file. No application code was changed. Head before this audit update: `9391fc1d532bb55a6774eb0366542271e7bb4fb2`; base `main`: `9cee6c2920c88acdfc98c78514108323731e5604`.
+- The earlier head's Cloudflare Workers Builds check failed on 2026-10-17, but its available result did not include build logs, so the cause is **unknown**. After this documentation-only follow-up, a new check started at `2026-10-17T06:25:16Z` and was still **in progress** at last read; it is not a passing result. No production deployment was performed as part of this audit. [PR #12 checks](https://github.com/pureekangraw-ops/Pantheon-WorkHub/pull/12/checks)
 
 ### Factory repository and deployment mapping
 
@@ -43,7 +43,7 @@ These are local test results, not end-to-end integration proof across live GitHu
 - Live LIGHT BOOK → PANTHEON service-binding health response.
 - HERMES inference on Android and root cause of the earlier HTTP 500.
 - End-to-end integration across real services and credentials.
-- Root cause for the failed PR #12 Cloudflare check; build logs were unavailable.
+- Root cause for the failed earlier PR #12 Cloudflare check; logs were unavailable, and the refreshed check is still in progress.
 - The initial GitHub/GitLab permission findings were supplied by BIG as preliminary baseline and were not independently re-audited here.
 
 ## Status
