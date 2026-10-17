@@ -77,7 +77,41 @@ export async function runDriveTool(name,args={},env={},fetcher=fetch){
   if(!roots.size)return bad("DRIVE_FOLDER_ALLOWLIST_NOT_CONFIGURED",503);
   if(name==="light_drive_roots")return shape(args,[])?success({source:"google_drive",folder_ids:[...roots]}):bad("INVALID_INPUT");
   if(["light_drive_create","light_drive_update","light_drive_move"].includes(name)){
-    return bad("DRIVE_WRITE_NOT_IMPLEMENTED",501);
+    const isCreate=name==="light_drive_create",isUpdate=name==="light_drive_update";
+    const keys=isCreate?["folder_id","name","text","mime_type"]:isUpdate?["file_id","text"]:["file_id","folder_id"];
+    if(!shape(args,keys))return bad("INVALID_INPUT");
+    if(isCreate?(!fileId(args.folder_id)||typeof args.name!=="string"||!args.name.trim()||args.name.length>180):
+       (!fileId(args.file_id)||(isUpdate?false:!fileId(args.folder_id))))return bad("INVALID_INPUT");
+    if((isCreate||isUpdate)&&(typeof args.text!=="string"||new TextEncoder().encode(args.text).length>60000))return bad("INVALID_INPUT");
+    if(isCreate&&args.mime_type!==undefined&&!["text/plain","text/markdown","text/csv","application/json","application/vnd.google-apps.folder"].includes(args.mime_type))return bad("INVALID_INPUT");
+    try{
+      const token=await googleToken(env,fetcher);
+      const source=isCreate?args.folder_id:args.file_id;
+      if(!(await inScope(source,roots,token,fetcher)))return bad("RESOURCE_NOT_ALLOWLISTED",403);
+      if(!isCreate){
+        const item=await metadata(args.file_id,token,fetcher);
+        if(item.trashed)return bad("DRIVE_ITEM_TRASHED",404);
+        if(isUpdate&&!["text/plain","text/markdown","text/csv","application/json"].includes(item.mimeType))return bad("DRIVE_UNSUPPORTED_MIME",415);
+        if(!isUpdate&&(!Array.isArray(item.parents)||item.parents.length!==1||roots.has(args.file_id)))return bad("DRIVE_MOVE_NOT_ALLOWED",403);
+      }
+      if(!isCreate&&!isUpdate&&!(await inScope(args.folder_id,roots,token,fetcher)))return bad("RESOURCE_NOT_ALLOWLISTED",403);
+      const headers={authorization:"Bearer "+token};
+      let url,options;
+      if(isCreate){
+        const mime=args.mime_type||"text/plain";
+        const folder=mime==="application/vnd.google-apps.folder";
+        const meta={name:args.name.trim(),parents:[args.folder_id],mimeType:mime};
+        if(folder){url="https://www.googleapis.com/drive/v3/files?fields=id,name,mimeType,parents";options={method:"POST",headers:{...headers,"content-type":"application/json"},body:JSON.stringify(meta)};}
+        else{const boundary="pantheon_drive_boundary";
+          url="https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,mimeType,parents";
+          options={method:"POST",headers:{...headers,"content-type":"multipart/related; boundary="+boundary},body:"--"+boundary+"\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n"+JSON.stringify(meta)+"\r\n--"+boundary+"\r\nContent-Type: "+mime+"; charset=UTF-8\r\n\r\n"+args.text+"\r\n--"+boundary+"--"};}
+      }else if(isUpdate){url="https://www.googleapis.com/upload/drive/v3/files/"+encodeURIComponent(args.file_id)+"?uploadType=media&fields=id,name,mimeType,parents";options={method:"PATCH",headers:{...headers,"content-type":"text/plain; charset=UTF-8"},body:args.text};}
+      else{const item=await metadata(args.file_id,token,fetcher);const q=new URLSearchParams({addParents:args.folder_id,removeParents:item.parents[0],fields:"id,name,mimeType,parents"});url="https://www.googleapis.com/drive/v3/files/"+encodeURIComponent(args.file_id)+"?"+q;options={method:"PATCH",headers};}
+      const raw=await readApi(url,options,fetcher);
+      const result=JSON.parse(raw);
+      if(!result.id)return bad("DRIVE_INVALID_RESPONSE",502);
+      return success({source:"google_drive",id:result.id,name:result.name,mimeType:result.mimeType,parents:result.parents});
+    }catch(e){return bad(e instanceof Error?e.message:"DRIVE_UNAVAILABLE",502);}
   }
   if(name==="light_drive_list"){
     if(!shape(args,["folder_id","query","limit"])||
