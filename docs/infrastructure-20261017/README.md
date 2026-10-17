@@ -76,3 +76,9 @@ Window: 2026-10-10 00:00 UTC inclusive through 2026-10-17 00:00 UTC exclusive. A
 ## Evidence and limits
 
 `INVENTORY.md` enumerates every binding and all 20 DO namespaces. Attached JSON contains sanitized configuration, source module hashes, resource/routes/queue metadata, paginated object counts, usage and historical receipt readback. Local test logs and bundle logs are in `evidence/`. Production acceptance remains BLOCKED; broken service targets and missing R2 are RED. No service is declared safe to delete.
+
+## Delivery
+
+Receiver Draft PR: https://github.com/pureekangraw-ops/Pantheon-WorkHub/pull/11 (initial implementation 89fb16a). Storefront Draft PR: https://github.com/pureekangraw-ops/yggmetro-web/pull/53 (86e9988), built on #52. Branches: `feat/storefront-brief-ingress-20261017` and `refactor/pantheon-brief-routing-20261017`.
+
+Read-only Observatory request returned upstream 200 / NO_FRESH_SNAPSHOT at epoch 1792200262973. No capture was triggered; a new owner-triggered Send page round is required for acceptance. Local reviewer confirmed the principal-scoped budget fix and found no remaining reproducible Critical/Important issue in reviewed scope. CI results are separate from the attached local results.
