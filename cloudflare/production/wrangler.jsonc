@@ -1,6 +1,6 @@
 {
   "name": "phatheon-workhub",
-  "main": "owner-entrypoint.mjs",
+  "main": "direct-entrypoint.mjs",
   "compatibility_date": "2026-10-13",
   "d1_databases": [
     {
@@ -14,5 +14,8 @@
       "binding": "FACTORY",
       "service": "factory-district"
     }
-  ]
+  ],
+  "vars": {
+    "STOREFRONT_INGRESS_ENABLED": "false"
+  }
 }

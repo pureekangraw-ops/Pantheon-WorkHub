@@ -1,0 +1,26 @@
+✔ GO owner bridge reads the latest manually supplied round with time and page state (24.921068ms)
+✔ round read never silently substitutes another capture or device (3.714262ms)
+✔ expired or revoked observations are never returned as current state (2.234986ms)
+✔ round bridge rejects injected parameters and public anonymous reads (1.184567ms)
+✔ internal bridge queues then reads real task without caller token (7.436144ms)
+✔ internal bridge queues Factory job without dispatch (3.233541ms)
+✔ internal bridge requires explicit approval before Factory dispatch (0.740025ms)
+✔ internal bridge denies arbitrary routes, tokens and operations (0.486329ms)
+✔ public HTTP still denies anonymous intent after adding internal bridge (0.890395ms)
+✔ receiver without owner secret fails closed (0.185283ms)
+✔ draft and confirmation persist readback and one queued review without execution (29.79394ms)
+✔ session ownership, identity conflicts and confirmed locks cannot be bypassed (3.47148ms)
+✔ receiver rejects arbitrary operations, owner authority and malformed payloads (1.092976ms)
+✔ receiver is disabled by default and public internal HTTP never writes (1.196203ms)
+✔ budget retries are idempotent and limits survive independent receiver calls (2.85538ms)
+✔ sales events reject payment authority and cannot disclose another principal event (0.989252ms)
+✔ conversation budget isolation includes the signed principal, not just a caller ID (1.767833ms)
+✔ a failed task insert rolls the confirmation transaction back and retry recovers (4.440141ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 18
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 203.948273

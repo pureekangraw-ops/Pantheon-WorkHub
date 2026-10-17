@@ -1,0 +1,233 @@
+[
+  {
+    "worker": "phatheon-workhub",
+    "modules": [
+      {
+        "name": "direct-entrypoint.mjs",
+        "sha256": "7f8b206cee782bde0d8753b3a5f0c7bda52986a6e3f5bc097a5adc353f191e59",
+        "bytes": 565
+      },
+      {
+        "name": "mcp-oauth.mjs",
+        "sha256": "caea4d18c91da2ea805ea64700dc13e3ff24891d3a4e4931ad2af1d87c0b695a",
+        "bytes": 29663
+      },
+      {
+        "name": "mcp-router.mjs",
+        "sha256": "a7ffe2bc7600555d7d837a11807395a9004b328a0172699cafd884aa55f4ee0c",
+        "bytes": 6893
+      },
+      {
+        "name": "oauth-ledger.mjs",
+        "sha256": "d6e9b2e9f2fe480a54d5a1c2d4ad854bf4420d418c1d0598bba5bf1ea3f4e804",
+        "bytes": 1421
+      },
+      {
+        "name": "observatory-auth.mjs",
+        "sha256": "d72e443ab2b24729845c6794b4eb254f352e4dbfd46938e9d3cae7fabc07ba41",
+        "bytes": 1309
+      },
+      {
+        "name": "observatory-retention.mjs",
+        "sha256": "6f903fd47661494e77d680a80c2ea00e651366dfb147ec8aab39a3e2f6357179",
+        "bytes": 1151
+      },
+      {
+        "name": "observatory-router.mjs",
+        "sha256": "89bcd6a87a259b881db654720604d8966b406a1dbd3d53fc817d191ae1f3476a",
+        "bytes": 3204
+      },
+      {
+        "name": "observatory-schema.mjs",
+        "sha256": "d1101ab27b4c86af7de57b36fa7a20d193e56aa882617cf637dd05359f86f2d7",
+        "bytes": 1269
+      },
+      {
+        "name": "observatory-stream.mjs",
+        "sha256": "f38ba7f333d5e5d12464a284eee585583da90377ecdc77288d29a2a1ac6b732a",
+        "bytes": 5798
+      },
+      {
+        "name": "owner-bridge.mjs",
+        "sha256": "a74d73a30913097c97843aca9d0466822dbf49464906b4c07bd0a3bbfffee808",
+        "bytes": 3513
+      },
+      {
+        "name": "owner-entrypoint.mjs",
+        "sha256": "7bad61117782fbd3b6fa81ab9db283278e1f07be79a9b2992a545521062d1b2c",
+        "bytes": 352
+      },
+      {
+        "name": "worker.js",
+        "sha256": "c3e43802257e444b942df7828239d929e007365f03087a75928210deab6434ed",
+        "bytes": 45028
+      }
+    ],
+    "aggregate_sha256": "7c699e91d3602931a5e44827aa8d2ee7432c340c031efd3144346450630d4f04"
+  },
+  {
+    "worker": "factory-district",
+    "modules": [
+      {
+        "name": "worker.js",
+        "sha256": "f9e9e375dbe848b90449c5b8fc6d990a484b6052fa3f4ba3b4703dea513813ea",
+        "bytes": 62758
+      }
+    ],
+    "aggregate_sha256": "96a63f9ee487da178546be75c75b121be7f44878e6b924dc4dc11ae4cf5cf0f8"
+  },
+  {
+    "worker": "go-together",
+    "modules": [
+      {
+        "name": "index.js",
+        "sha256": "7d6d4ba6d6cb5a7703ca2868a2add883a4e3b9332fbbc314fbb8b2eb41e53b5d",
+        "bytes": 65718
+      },
+      {
+        "name": "index.js.map",
+        "sha256": "e24325d2ad89aca2181489eee76cddd2ba5fc94ff1cb6c55dac0f28ad5161a88",
+        "bytes": 107282
+      }
+    ],
+    "aggregate_sha256": "2b72b47db82e5f1a11ee714ae6e06e3e84ecb10102eb1360c450c25592b3cbe7"
+  },
+  {
+    "worker": "light-bookmark",
+    "modules": [
+      {
+        "name": "index.js",
+        "sha256": "2e200b4769dd26ea439c803cc466b8979af31f6a31bf0acb8ad4eda2d7746715",
+        "bytes": 15409
+      },
+      {
+        "name": "index.js.map",
+        "sha256": "1760bb373ba4d43a5ed102d43fbfeb23f2b2102fbd1c80eba91e98241a8fbd74",
+        "bytes": 25472
+      }
+    ],
+    "aggregate_sha256": "dfb18121c8fe33698d41369a01c38c27345be98fca7cb0218ac30faf57b3d274"
+  },
+  {
+    "worker": "yggmetro-web",
+    "modules": [
+      {
+        "name": "index.js",
+        "sha256": "25ae18af322745b7f190d2d097ab5601fad1df1ba9eed2d97327a989ba1ea6ca",
+        "bytes": 181871
+      },
+      {
+        "name": "index.js.map",
+        "sha256": "7e16ea40bb3637cb52bc8c62d1e2f652e3794f13b4032e4d1689aabfee652bb7",
+        "bytes": 183404
+      }
+    ],
+    "aggregate_sha256": "e899e610194368ee2a26eef57dd844a45389094a159fc2f600af4e28d08b49f6"
+  },
+  {
+    "worker": "go-hub",
+    "modules": [
+      {
+        "name": "go-hub-edge-worker.js",
+        "sha256": "4813065d8e58c29efff67bc6769d72fd9bcae00b7be3b9eac5465ec2f0bc393d",
+        "bytes": 1165246
+      }
+    ],
+    "aggregate_sha256": "db7e4f5e0028e62ce7d71e54794ae16946866b7bb7a2593cd0fcd89d965014fa"
+  },
+  {
+    "worker": "go-local-memory-mcp",
+    "modules": [
+      {
+        "name": "script",
+        "sha256": "affb5c80f48f70d753ff14e5f8a88e8f393c2df5f93a2fda9b02db5e2cb58c4c",
+        "bytes": 12157
+      }
+    ],
+    "aggregate_sha256": "29994e973b3c1c59f4abe14994be158fad29d0d33d31f49d1e3b1600d9c44394"
+  },
+  {
+    "worker": "greenhouse-transport",
+    "modules": [
+      {
+        "name": "src/pixie/d1-store.mjs",
+        "sha256": "16c7d92a3568fe64ac8a072ef42b0f16eaae0d7bc82323c56b6d1994159d94e9",
+        "bytes": 5171
+      },
+      {
+        "name": "src/pixie/delivery-runtime.mjs",
+        "sha256": "5150d1190fb3d3eb9cfe42555e8cf8420dec5294a2e72482f352db99e20772df",
+        "bytes": 7187
+      },
+      {
+        "name": "src/pixie/transport-worker.mjs",
+        "sha256": "dda42d6641a5639264d2b834e41f460c4e0ab7150ad3e72ba5db470f5b795c93",
+        "bytes": 10385
+      }
+    ],
+    "aggregate_sha256": "779cfcec05a455120e92705bd47c762dbe0ddb28f8a4c57821bf4cc901cbac3a"
+  },
+  {
+    "worker": "observatory-web",
+    "modules": [
+      {
+        "name": "worker.mjs",
+        "sha256": "3ceeb2b28b2e825af1459bac7b49c949eb026228833ff4a0ad5f9b0279f0aab3",
+        "bytes": 9954
+      }
+    ],
+    "aggregate_sha256": "9cca89f51a0152056a94b68071cc408306cb3de7f1f1d0489dfa3fb16b22e20c"
+  },
+  {
+    "worker": "pantheon-workhub-staging",
+    "modules": [
+      {
+        "name": "main.mjs",
+        "sha256": "f3506d96f293cedb9cb56f335afdb0971de89635fa1a8898b9c6afcbc752d39d",
+        "bytes": 12877
+      },
+      {
+        "name": "observatory-auth.mjs",
+        "sha256": "d72e443ab2b24729845c6794b4eb254f352e4dbfd46938e9d3cae7fabc07ba41",
+        "bytes": 1309
+      },
+      {
+        "name": "observatory-retention.mjs",
+        "sha256": "6f903fd47661494e77d680a80c2ea00e651366dfb147ec8aab39a3e2f6357179",
+        "bytes": 1151
+      },
+      {
+        "name": "observatory-router.mjs",
+        "sha256": "57d1f1f776027ebe5cd9d1b158bda69d7f68a0ce4ae1c5e3ee4e83866cefccdd",
+        "bytes": 2970
+      },
+      {
+        "name": "observatory-schema.mjs",
+        "sha256": "d1101ab27b4c86af7de57b36fa7a20d193e56aa882617cf637dd05359f86f2d7",
+        "bytes": 1269
+      },
+      {
+        "name": "observatory-stream.mjs",
+        "sha256": "e51795ac8d8a045d7cd9a46b2e7176d802094f1c562f20bf9f8d30348375e02c",
+        "bytes": 3646
+      },
+      {
+        "name": "ui.mjs",
+        "sha256": "dcd8cdd77627035094d70ab119e9b7e82d796e592c4cbd8c36882ac04320c897",
+        "bytes": 8278
+      }
+    ],
+    "aggregate_sha256": "0264b39ad79f1e0cc3528440d2aad5d8b9611c7b3b655bc31ea351795a067896"
+  },
+  {
+    "worker": "ygph-metropolis",
+    "modules": [
+      {
+        "name": "index.js",
+        "sha256": "779ad691d5be8f482b93b8386ea9cc547dbdc7f6c50df14c5c5c7354b7d5fed1",
+        "bytes": 47088
+      }
+    ],
+    "aggregate_sha256": "701b41df02f7ebed9339be7f7a8b82b2f8363d8fa007bfb3cf5eaad8f207eeb7"
+  }
+]

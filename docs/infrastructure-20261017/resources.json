@@ -1,0 +1,389 @@
+{
+  "domains": {
+    "status": 200,
+    "success": true,
+    "result": [
+      {
+        "id": "101950c5f36e6730700c9e0998cab3441816b82a",
+        "zone_id": "83d7f962ff08193aa78346586d407fda",
+        "zone_name": "yggmetro.com",
+        "hostname": "yggmetro.com",
+        "service": "yggmetro-web",
+        "environment": "production",
+        "cert_id": "963005b9-0b01-4215-b5be-e356ed562990",
+        "previews_enabled": false,
+        "enabled": true
+      },
+      {
+        "id": "15344208173773bfc2d4de47aca804ee2c92bea3",
+        "zone_id": "83d7f962ff08193aa78346586d407fda",
+        "zone_name": "yggmetro.com",
+        "hostname": "shop.yggmetro.com",
+        "service": "yggmetro-web",
+        "environment": "production",
+        "cert_id": "fead6e0f-56f6-45fd-8fc0-aee338d12917",
+        "previews_enabled": false,
+        "enabled": true
+      },
+      {
+        "id": "436dc196f7686c31385c5aadc3154580d38fb9aa",
+        "zone_id": "83d7f962ff08193aa78346586d407fda",
+        "zone_name": "yggmetro.com",
+        "hostname": "office.yggmetro.com",
+        "service": "yggmetro-web",
+        "environment": "production",
+        "cert_id": "988a41c7-af38-4d0c-90e3-08fcd53f1581",
+        "previews_enabled": false,
+        "enabled": true
+      }
+    ],
+    "errors": null
+  },
+  "scripts": {
+    "status": 200,
+    "success": true,
+    "result": [
+      {
+        "id": "factory-district",
+        "modified_on": "2026-10-14T03:09:26.647932Z",
+        "handlers": [
+          "fetch"
+        ],
+        "usage_model": "standard"
+      },
+      {
+        "id": "go-hub",
+        "modified_on": "2026-10-07T22:41:35.214588Z",
+        "handlers": [
+          "fetch"
+        ],
+        "usage_model": "standard"
+      },
+      {
+        "id": "go-local-memory-mcp",
+        "modified_on": "2026-10-07T12:50:59.869426Z",
+        "handlers": [
+          "fetch"
+        ],
+        "usage_model": "standard"
+      },
+      {
+        "id": "go-together",
+        "modified_on": "2026-10-15T12:43:25.258484Z",
+        "handlers": [
+          "fetch"
+        ],
+        "usage_model": "standard"
+      },
+      {
+        "id": "greenhouse-transport",
+        "modified_on": "2026-10-11T04:51:32.622165Z",
+        "handlers": [
+          "fetch",
+          "queue",
+          "scheduled"
+        ],
+        "usage_model": "standard"
+      },
+      {
+        "id": "light-bookmark",
+        "modified_on": "2026-10-14T06:49:05.886197Z",
+        "handlers": [
+          "fetch"
+        ],
+        "usage_model": "standard"
+      },
+      {
+        "id": "observatory-web",
+        "modified_on": "2026-10-08T14:56:54.796056Z",
+        "handlers": [
+          "fetch"
+        ],
+        "usage_model": "standard"
+      },
+      {
+        "id": "pantheon-workhub-staging",
+        "modified_on": "2026-10-14T06:09:23.425668Z",
+        "handlers": [
+          "fetch",
+          "scheduled"
+        ],
+        "usage_model": "standard"
+      },
+      {
+        "id": "phatheon-workhub",
+        "modified_on": "2026-10-15T12:23:53.974441Z",
+        "handlers": [
+          "fetch",
+          "scheduled"
+        ],
+        "usage_model": "standard"
+      },
+      {
+        "id": "yggmetro-web",
+        "modified_on": "2026-10-15T22:31:44.466705Z",
+        "handlers": [
+          "fetch"
+        ],
+        "usage_model": "standard"
+      },
+      {
+        "id": "ygph-metropolis",
+        "modified_on": "2026-09-26T15:06:36.660542Z",
+        "handlers": [
+          "fetch"
+        ],
+        "usage_model": "standard"
+      }
+    ],
+    "errors": []
+  },
+  "billing": {
+    "status": "BLOCKED",
+    "error": "Error: Cloudflare API error: 10000: Authentication error"
+  },
+  "namespaces": {
+    "status": 200,
+    "success": true,
+    "result": [
+      {
+        "id": "dd0787a48dc642e1affb685e8bf7e210",
+        "name": "go-hub_HephaestusForeman",
+        "script": "go-hub",
+        "class": "HephaestusForeman",
+        "use_sqlite": true
+      },
+      {
+        "id": "a1874e7a33964cb7804b7e3332acb1ba",
+        "name": "go-hub_GoHubFactoryState",
+        "script": "go-hub",
+        "class": "GoHubFactoryState",
+        "use_sqlite": true
+      },
+      {
+        "id": "8c59e28d9df8400d95cd9e0f3643bfda",
+        "name": "go-hub_ObserverSessionRegistry",
+        "script": "go-hub",
+        "class": "ObserverSessionRegistry",
+        "use_sqlite": true
+      },
+      {
+        "id": "885a932240d24c79bda54c0ef38032e3",
+        "name": "go-hub_GoHubCentreState",
+        "script": "go-hub",
+        "class": "GoHubCentreState",
+        "use_sqlite": true
+      },
+      {
+        "id": "1044959d62a74ec8b83282903a0fcc77",
+        "name": "go-hub_LighthouseControlPortSessionRegistry",
+        "script": "go-hub",
+        "class": "LighthouseControlPortSessionRegistry",
+        "use_sqlite": true
+      },
+      {
+        "id": "94020d8ad5114b25a73fdcccb828b009",
+        "name": "go-hub_GoHubGlobalAuditLog",
+        "script": "go-hub",
+        "class": "GoHubGlobalAuditLog",
+        "use_sqlite": true
+      },
+      {
+        "id": "dcbb914683b8460fa44ff86f07c03876",
+        "name": "go-hub_GoHubCounterState",
+        "script": "go-hub",
+        "class": "GoHubCounterState",
+        "use_sqlite": true
+      },
+      {
+        "id": "2f8a94b9681c45b9a448a25db4be568f",
+        "name": "go-hub_GoHubCounterDispatchState",
+        "script": "go-hub",
+        "class": "GoHubCounterDispatchState",
+        "use_sqlite": true
+      },
+      {
+        "id": "5d902fd236624787add0f7c48c0b86a0",
+        "name": "go-hub_GoHubNotionLightState",
+        "script": "go-hub",
+        "class": "GoHubNotionLightState",
+        "use_sqlite": true
+      },
+      {
+        "id": "bb63383d28104d728820c9b6627d13b3",
+        "name": "go-hub_GoHubCounterInboxState",
+        "script": "go-hub",
+        "class": "GoHubCounterInboxState",
+        "use_sqlite": true
+      },
+      {
+        "id": "813a36c56ddf46d4b262408ef5c19be6",
+        "name": "go-hub_GoHubMaintenanceState",
+        "script": "go-hub",
+        "class": "GoHubMaintenanceState",
+        "use_sqlite": true
+      },
+      {
+        "id": "10aa2a62910c4558a9dc08003f21e0bd",
+        "name": "go-hub_GoHubBroadcastState",
+        "script": "go-hub",
+        "class": "GoHubBroadcastState",
+        "use_sqlite": true
+      },
+      {
+        "id": "d87f91397d744d48ad19a9ff3e593b8c",
+        "name": "go-hub_GoHubPixieMonitorState",
+        "script": "go-hub",
+        "class": "GoHubPixieMonitorState",
+        "use_sqlite": true
+      },
+      {
+        "id": "1816cd3431b343e0a679645071115b65",
+        "name": "go-hub_FactoryEyeSessionRegistry",
+        "script": "go-hub",
+        "class": "FactoryEyeSessionRegistry",
+        "use_sqlite": true
+      },
+      {
+        "id": "6ed505250e1b4f66a10e8c0bc9640c64",
+        "name": "go-hub_OfficeRateLimitState",
+        "script": "go-hub",
+        "class": "OfficeRateLimitState",
+        "use_sqlite": true
+      },
+      {
+        "id": "9334ee9286bf4f84a0372a2e3d11af45",
+        "name": "go-hub_pixie-visual-full-spec-v1-living-scene_HandoffLedger",
+        "script": "go-hub",
+        "class": "HandoffLedger",
+        "use_sqlite": true,
+        "preview": {
+          "id": "8afdfdbc9d34441880e8db330a17a51a",
+          "slug": "pixie-visual-full-spec-v1-living-scene",
+          "name": "pixie-visual-full-spec-v1-living-scene"
+        }
+      },
+      {
+        "id": "34aef7e6eb4d46659f261a8ef405af27",
+        "name": "go-hub_OfficePasskeyState",
+        "script": "go-hub",
+        "class": "OfficePasskeyState",
+        "use_sqlite": true
+      },
+      {
+        "id": "1f8d657cf0174f53a5c437ef48640e2f",
+        "name": "go-hub_lab-retrieval-resolver-20261003_HandoffLedger",
+        "script": "go-hub",
+        "class": "HandoffLedger",
+        "use_sqlite": true,
+        "preview": {
+          "id": "a9b7102c81394a6f85f32de0c56827f8",
+          "slug": "lab-retrieval-resolver-20261003",
+          "name": "lab-retrieval-resolver-20261003"
+        }
+      },
+      {
+        "id": "81675872e8084d77bdbf86395208d67d",
+        "name": "go-hub_pixie-arsenal-contract-v1_HandoffLedger",
+        "script": "go-hub",
+        "class": "HandoffLedger",
+        "use_sqlite": true,
+        "preview": {
+          "id": "bea3ff40be8042e78706c5cab750384d",
+          "slug": "pixie-arsenal-contract-v1",
+          "name": "pixie/arsenal-contract-v1"
+        }
+      },
+      {
+        "id": "6d8fe60f71fd45528bd37c49586ebda3",
+        "name": "go-hub_fix-pixie-visual-crew-runtime-migration-20261003_HandoffLedger",
+        "script": "go-hub",
+        "class": "HandoffLedger",
+        "use_sqlite": true,
+        "preview": {
+          "id": "6bca05e731f14f31a98234079bc47ba6",
+          "slug": "fix-pixie-visual-crew-runtime-migration-20261003",
+          "name": "fix/pixie-visual-crew-runtime-migration-20261003"
+        }
+      }
+    ],
+    "errors": null
+  },
+  "d1": {
+    "status": 200,
+    "success": true,
+    "result": [
+      {
+        "uuid": "22b59dc3-e07c-4ae7-b5b1-2646d3e8a975",
+        "name": "pantheon-workhub",
+        "created_at": "2026-10-13T20:37:18.446Z",
+        "version": "production",
+        "num_tables": 0,
+        "file_size": 184320,
+        "jurisdiction": null
+      },
+      {
+        "uuid": "aea1361a-792f-4fa4-b60e-91c7e7493570",
+        "name": "pantheon-workhub-staging",
+        "created_at": "2026-10-13T20:17:15.534Z",
+        "version": "production",
+        "num_tables": 0,
+        "file_size": 65536,
+        "jurisdiction": null
+      },
+      {
+        "uuid": "28abed4a-081a-4927-a3ac-2ac31aca3177",
+        "name": "lightbookmarks",
+        "created_at": "2026-10-10T14:41:30.005Z",
+        "version": "production",
+        "num_tables": 0,
+        "file_size": 28672,
+        "jurisdiction": null
+      },
+      {
+        "uuid": "0c9fda05-2b91-4b31-9f5f-25e8b7235251",
+        "name": "picxie",
+        "created_at": "2026-10-10T01:38:08.692Z",
+        "version": "production",
+        "num_tables": 0,
+        "file_size": 98304,
+        "jurisdiction": null
+      },
+      {
+        "uuid": "b236c05f-e07f-498b-a9d5-ccefe8be5f22",
+        "name": "go-together",
+        "created_at": "2026-10-10T01:33:41.162Z",
+        "version": "production",
+        "num_tables": 0,
+        "file_size": 946176,
+        "jurisdiction": null
+      }
+    ],
+    "errors": []
+  },
+  "r2": {
+    "status": 200,
+    "success": true,
+    "result": {
+      "buckets": [
+        {
+          "name": "factory",
+          "creation_date": "2026-10-05T18:16:28.061Z"
+        },
+        {
+          "name": "factory-district-preview",
+          "creation_date": "2026-10-13T18:41:59.705Z"
+        },
+        {
+          "name": "ygg-office-assets",
+          "creation_date": "2026-10-02T23:48:37.165Z"
+        },
+        {
+          "name": "ygg-shop",
+          "creation_date": "2026-10-02T23:49:41.719Z"
+        }
+      ]
+    },
+    "errors": []
+  }
+}
