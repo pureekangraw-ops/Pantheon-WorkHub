@@ -43,13 +43,14 @@ test("list is scoped to permitted root and uses only read-only upstream calls",a
 test("reads bounded JSON from a scoped file",async()=>{
   captures.length=0;const r=await runDriveTool("light_drive_file",{file_id:file},env,fetcher);
   assert.equal(r.ok,true);assert.match(r.result.text,/historical/);
-  assert.deepEqual(captures.map(x=>x.method),["POST","GET","GET"]);
+  assert.deepEqual(captures.map(x=>x.method),["POST","GET","GET","GET"]);
 });
 test("out-of-scope files are denied before reading content",async()=>{
   captures.length=0;
   const r=await runDriveTool("light_drive_file",{file_id:outside},env,fetcher);
   assert.equal(r.ok,false);assert.equal(r.status,"RESOURCE_NOT_ALLOWLISTED");
-  assert.equal(captures.length,2);
+  assert.equal(captures.length,3);
+  assert.ok(captures.every(x=>!x.url.includes("alt=media")));
 });
 test("invalid path and write intent are rejected before OAuth",async()=>{
   captures.length=0;
