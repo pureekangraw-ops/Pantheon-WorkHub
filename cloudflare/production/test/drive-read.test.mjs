@@ -5,6 +5,49 @@ import {lightBridgeCall} from "../light-bridge.mjs";
 const file="1mi5UMJRE2Q6nM9u9kz0wgdEVw3QSR2S", folder="1gmu8Mh8Uve9VX3bRjaPGF4qWmMHfCniz", permission="perm_1234567890";
 const env={LIGHT_BRIDGE_ENABLED:"true",PANTHEON_DRIVE_READ_ENABLED:"true",PANTHEON_DRIVE_WRITE_ENABLED:"true",GOOGLE_ID_SECRET:"test-client-id",GOOGLE_SECRET:"test-client-secret",GOOGLE_REFRESH_TOKEN:"test-refresh-token"};
 const captures=[];
+test("HTTP and size errors keep stable codes and safe diagnostics",async()=>{
+  for(const [response,status,failure] of [
+    [()=>respond("private upstream body",403),"UPSTREAM_HTTP_403","http"],
+    [()=>new Response("x",{headers:{"content-length":"96001"}}),"UPSTREAM_TOO_LARGE","too_large"],
+  ]){
+    const result=await runDriveTool("light_drive_roots",{},env,async()=>response());
+    assert.equal(result.status,status);
+    assert.equal(result.upstream_stage,"oauth_token");
+    assert.equal(result.upstream_failure,failure);
+    assert.doesNotMatch(JSON.stringify(result),/private upstream body/);
+  }
+});
+test("LightBridge preserves safe Drive diagnostics",async()=>{
+  const result=await lightBridgeCall(env,{},{
+    operation:"pantheon.drive.read",name:"light_drive_roots",args:{},
+  },async()=>{throw new TypeError("private error");});
+  assert.equal(result.upstream_stage,"oauth_token");
+  assert.equal(result.upstream_failure,"network");
+  assert.equal(result.caller,"LIGHT-BOOKMARK");
+  assert.doesNotMatch(JSON.stringify(result),/private error/);
+});
+for(const stage of ["oauth_token","drive_api"]){
+  for(const phase of ["fetch","body"]){
+    for(const failure of ["network","timeout"]){
+      test(`safe upstream diagnostics: ${stage}/${phase}/${failure}`,async()=>{
+        const broken=async(url,opts)=>{
+          const selected=(url==="https://oauth2.googleapis.com/token") === (stage==="oauth_token");
+          if(!selected)return fetcher(url,opts);
+          const error=Object.assign(Error("secret-client secret-refresh bearer-token private-url"),{name:failure==="timeout"?"TimeoutError":"TypeError"});
+          if(phase==="fetch")throw error;
+          return new Response(new ReadableStream({start(controller){controller.error(error);}}));
+        };
+        const result=await runDriveTool("light_drive_roots",{},env,broken);
+        assert.equal(result.status,"UPSTREAM_UNAVAILABLE");
+        assert.equal(result.upstream_status,502);
+        assert.equal(result.upstream_stage,stage);
+        assert.equal(result.upstream_phase,phase);
+        assert.equal(result.upstream_failure,failure);
+        assert.doesNotMatch(JSON.stringify(result),/secret-client|secret-refresh|bearer-token|private-url/);
+      });
+    }
+  }
+}
 const respond=(body,status=200)=>new Response(typeof body==="string"?body:JSON.stringify(body),{status});
 const fetcher=async(url,opts)=>{
   captures.push({url,method:opts.method,headers:opts.headers,body:opts.body});
@@ -72,3 +115,4 @@ test("PANTHEON returns namespaced read and write capability labels",async()=>{
   const w=await lightBridgeCall(env,hub,{operation:"pantheon.drive.write",name:"light_drive_create",args:{name:"x.txt"}},fetcher);
   assert.equal(w.capability,"pantheon.drive.write");assert.equal(w.ok,true);
 });
+
