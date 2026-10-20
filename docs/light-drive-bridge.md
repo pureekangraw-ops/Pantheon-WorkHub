@@ -1,32 +1,9 @@
-# Google Drive read access for LIGHT
+# PANTHEON Drive read capability for LIGHT
 
-The existing PANTHEON Worker is the sole OAuth holder for Google Drive.
-Its `LightBridge` Cloudflare Service Binding exposes three **read-only**
-operations to LIGHT-BOOKMARK: `light_drive_roots`, `light_drive_list`,
-`light_drive_file`.
+LIGHT-BOOKMARK invokes the PANTHEON LightBridge capability `pantheon.drive.read`. The OAuth client secret and refresh token stay exclusively in PANTHEON; no Google credentials are sent to LIGHT.
 
-Existing PANTHEON secret names:
-- `GOOGLE_ID_SECRET`: Google OAuth client ID
-- `GOOGLE_SECRET`: OAuth client secret
-- `GOOGLE_REFRESH_TOKEN`: refresh token
+The capability is read-only and reads files visible to the Google account authorized in PANTHEON. It does not use a PANTHEON folder allowlist. Google OAuth remains the access boundary; the grant must include `https://www.googleapis.com/auth/drive.readonly` (or the broader `https://www.googleapis.com/auth/drive`). Google classifies `drive.readonly` as a restricted scope, so Google consent, app verification, or a security assessment may be required. A narrower per-file grant such as `drive.file` is not sufficient for account-wide reads. See [Google Drive API scopes](https://developers.google.com/drive/api/guides/about-auth).
 
-No values are committed or copied to LIGHT. Successful API usage still
-depends on valid tokens and an existing Google OAuth grant with Drive read
-scope. No token validity or scope has been confirmed by a live API call.
+`PANTHEON_DRIVE_READ_ENABLED` is a separate fail-closed feature flag. The bridge exposes only `light_drive_roots`, `light_drive_list`, and `light_drive_file`; it does not expose create, update, move, delete, sharing, or permission changes. LIGHT receives bounded metadata and up to 30,000 characters of supported text content per file; upstream response bodies are capped at 96 KB. Listing supports pagination and includes Shared Drives where Google allows them.
 
-Configure only non-sensitive folder IDs in
-`PANTHEON_DRIVE_ALLOWED_FOLDERS` (comma-delimited IDs). Current default root:
-`1gmu8Mh8Uve9VX3bRjaPGF4qWmMHfCniz` (HERMES Academy runs).
-Each file's ancestry must lead to an allowlisted root or access is denied.
-Root and filename metadata are bounded, and file text is truncated to
-30,000 characters with a 96 KB maximum upstream body.
-
-No Drive write, delete, move, permission or sharing action is exposed.
-LIGHT's existing task creation/Factory preparation permissions are
-unchanged. GitHub/GitLab/Cloudflare integrations stay in Factory District;
-this change does not migrate them into PANTHEON.
-
-Review `node --test cloudflare/production/test/drive-read.test.mjs` and
-test with LIGHT on a staging deployment and a permitted file before
-production rollout. The Cloudflare Preview service-binding limitations
-may require a dedicated staging Worker for end-to-end tests.
+Before production rollout, verify the existing Google OAuth grant in staging and test a file outside the former HERMES Academy runs folder. Do not deploy until the grant is confirmed to include account-wide read scope. Never copy OAuth secrets into LIGHT or source control.
