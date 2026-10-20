@@ -24,10 +24,22 @@ async function readLimited(response){
   }finally{reader.releaseLock();}
 }
 async function readApi(url,options,fetcher){
-  let res;try{res=await fetcher(url,{redirect:"error",signal:AbortSignal.timeout(10000),...options});}
-  catch{throw Error("UPSTREAM_UNAVAILABLE");}
-  if(!res.ok)throw Error("UPSTREAM_HTTP_"+res.status);
-  return readLimited(res);
+  const stage=url==="https://oauth2.googleapis.com/token"?"oauth_token":"drive_api";
+  const signal=AbortSignal.timeout(10000);
+  const diagnostic=(message,phase,failure)=>Object.assign(Error(message),{
+    upstream_stage:stage,upstream_phase:phase,upstream_failure:failure,
+  });
+  const unavailable=(error,phase)=>diagnostic("UPSTREAM_UNAVAILABLE",phase,
+    signal.aborted||error?.name==="TimeoutError"?"timeout":"network");
+  let res;
+  try{res=await fetcher(url,{...options,redirect:"error",signal});}
+  catch(error){throw unavailable(error,"fetch");}
+  if(!res.ok)throw diagnostic("UPSTREAM_HTTP_"+res.status,"fetch","http");
+  try{return await readLimited(res);}
+  catch(error){
+    if(error instanceof Error&&error.message==="UPSTREAM_TOO_LARGE")throw diagnostic("UPSTREAM_TOO_LARGE","body","too_large");
+    throw unavailable(error,"body");
+  }
 }
 async function googleToken(env,fetcher,write=false){
   if(!env.GOOGLE_ID_SECRET||!env.GOOGLE_SECRET||!env.GOOGLE_REFRESH_TOKEN)throw Error("GOOGLE_OAUTH_NOT_CONFIGURED");
@@ -212,5 +224,14 @@ export async function runDriveTool(name,args={},env={},fetcher=fetch){
   try{
     const token=await googleToken(env,fetcher,write);
     return success(write?await runWriteTool(name,args,token,fetcher):await runReadTool(name,args,token,fetcher));
-  }catch(e){return bad(e instanceof Error?e.message:"DRIVE_UNAVAILABLE",e?.http||502);}
+  }catch(e){
+    const result=bad(e instanceof Error?e.message:"DRIVE_UNAVAILABLE",e?.http||502);
+    if(e?.upstream_stage){
+      result.upstream_stage=e.upstream_stage;
+      result.upstream_phase=e.upstream_phase;
+      result.upstream_failure=e.upstream_failure;
+    }
+    return result;
+  }
 }
+
