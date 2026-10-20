@@ -27,6 +27,6 @@
   "vars": {
     "LIGHT_BRIDGE_ENABLED": "true",
     "LIGHT_BRIDGE_CREATE_ENABLED": "true",
-    "PANTHEON_DRIVE_ALLOWED_FOLDERS": "1gmu8Mh8Uve9VX3bRjaPGF4qWmMHfCniz"
+    "PANTHEON_DRIVE_READ_ENABLED": "true"
   }
 }
