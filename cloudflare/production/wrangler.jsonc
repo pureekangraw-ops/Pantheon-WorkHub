@@ -27,6 +27,7 @@
   "vars": {
     "LIGHT_BRIDGE_ENABLED": "true",
     "LIGHT_BRIDGE_CREATE_ENABLED": "true",
-    "PANTHEON_DRIVE_READ_ENABLED": "true"
+    "PANTHEON_DRIVE_READ_ENABLED": "true",
+    "PANTHEON_DRIVE_WRITE_ENABLED": "true"
   }
 }
