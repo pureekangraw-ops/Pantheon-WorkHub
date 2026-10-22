@@ -169,3 +169,34 @@ test('state changes between initial read and transaction fail closed',async()=>{
   assert.equal(snapshot(s.sql),before);assert.equal(s.calls,0);s.sql.close();
  }
 });
+test('existing-task API authenticates before disclosing task existence',async()=>{
+ const s=await factoryFixture();const before=snapshot(s.sql);let reads=0;
+ const DB={prepare(){reads++;throw Error('must authenticate before database lookup');}};
+ const errors=[];
+ for(const task_id of [s.task_id,'task_'+'0'.repeat(32)]){
+  for(const authorization of ['', 'Bearer invalid']){
+   const r=await workhub.fetch(new Request('https://test/v1/factory/jobs',{method:'POST',headers:{authorization},body:JSON.stringify({task_id})}),{...s.env,DB});
+   assert.equal(r.status,401);errors.push(await r.text());
+  }
+ }
+ assert.equal(new Set(errors).size,1);assert.equal(reads,0);assert.equal(snapshot(s.sql),before);s.sql.close();
+});
+test('LOCAL FIXTURE ONLY: exact supplied L1 ID preserves recorded hash; synthetic text is not original evidence',async()=>{
+ const fixture=JSON.parse(readFileSync(new URL('./fixtures/l1-task-local.json',import.meta.url),'utf8'));
+ assert.equal(fixture.evidence_kind,'LOCAL_SYNTHETIC_FIXTURE_NOT_LIVE_READBACK');
+ assert.equal(fixture.recorded_request_text,null);
+ const s=setup(),task_id=fixture.task_id;
+ s.sql.prepare('INSERT INTO tasks(task_id,status,request_text,request_sha256,created_at,updated_at) VALUES(?,?,?,?,?,?)').run(task_id,fixture.recorded_status,fixture.synthetic_request_text,fixture.recorded_request_sha256,'local-fixture','local-fixture');
+ s.sql.prepare("INSERT INTO actions(action_key,task_id,tool_name,input_sha256,status) VALUES(?,?,'d1.create_text_artifact',?,'PREPARED')").run('act_local_l1',task_id,fixture.recorded_request_sha256);
+ let before=snapshot(s.sql),r=await queueExisting(s.env,task_id);
+ assert.equal(r.ok,false);assert.equal(r.upstream_status,409);assert.match(r.result.error,/hash mismatch/);
+ assert.equal(snapshot(s.sql),before);
+ // A separate internally consistent synthetic state proves unsupported eligibility.
+ // Its computed digest must never be confused with the recorded production digest.
+ const hash=Buffer.from(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(fixture.synthetic_request_text))).toString('hex');
+ assert.notEqual(hash,fixture.recorded_request_sha256);
+ s.sql.prepare('UPDATE tasks SET request_sha256=?').run(hash);s.sql.prepare('UPDATE actions SET input_sha256=?').run(hash);
+ before=snapshot(s.sql);r=await queueExisting(s.env,task_id);
+ assert.equal(r.ok,false);assert.equal(r.upstream_status,422);assert.match(r.result.error,/UNSUPPORTED/);
+ assert.equal(snapshot(s.sql),before);s.sql.close();
+});

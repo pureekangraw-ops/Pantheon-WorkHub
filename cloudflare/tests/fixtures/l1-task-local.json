@@ -1,0 +1,10 @@
+{
+  "evidence_kind": "LOCAL_SYNTHETIC_FIXTURE_NOT_LIVE_READBACK",
+  "task_id": "task_d6c9e93a42fd4f339bb47d941428dd08",
+  "recorded_status": "QUEUED",
+  "recorded_latest_run_id": null,
+  "recorded_request_sha256": "de0038fe8be999fe6a1c725156cd9684ac4887127ef783a659148ccdf36d0b24",
+  "recorded_request_text": null,
+  "limitation": "The parent supplied a request summary, not the complete recorded request bytes. Do not represent the synthetic request below as the original or its hash as the recorded hash.",
+  "synthetic_request_text": "LOCAL SYNTHETIC FIXTURE: Create a safe isolated deterministic text artifact containing YGG FACTORY L1 PASS, task identity, and test timestamp, with digest, receipt, and owner readback. No customer data, public publishing, production application changes, payments, external communication, or LOGIC trainee substitution. Return UNSUPPORTED or BLOCKED if the exact artifact lacks a supported machine or authority."
+}
