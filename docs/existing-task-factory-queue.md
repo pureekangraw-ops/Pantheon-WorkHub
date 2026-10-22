@@ -14,3 +14,7 @@ The new path only inserts a missing `factory_jobs` row and a correlated audit ev
 Validation is local using in-memory SQLite with a D1 adapter that serializes whole batch transactions. Tests cover eight simultaneous requests, insertion rollback, state changes between initial read and transaction, unsupported actions, unknown IDs, authentication, malformed/ambiguous input, existing legacy creation, and zero Factory calls. This is not deployed D1 or Factory runtime validation.
 
 Release order after separate approval: PANTHEON receiver first, then GO caller. No schema migration is required. Reverting the code restores the original contract; any valid queue rows created after a future approved release are ordinary existing-schema records and must not be deleted as part of rollback. Queue success is distinct from dispatch, receipt, artifact, and owner verification.
+
+## Approved exact-task exception
+
+The exact L1 task/hash pair is now statically authorized for the dedicated Factory text-artifact operation. Other d1.create_text_artifact tasks remain UNSUPPORTED. See l1-text-artifact-proposal.md for lifecycle, retry and release details. Legacy request-only creation is unchanged.

@@ -1,3 +1,4 @@
+import {L1_TASK_ID,L1_REQUEST_SHA256,L1_INTENT,L1_SCOPE,L1_RECEIPT_ID,verifyL1Readback} from './l1-contract.mjs';
 import { handleObservatory } from "./observatory-router.mjs";
 import { scheduledObservatoryCleanup } from "./observatory-schema.mjs";
 var __defProp = Object.defineProperty;
@@ -140,7 +141,7 @@ async function factoryHealth(env) {
 __name(factoryHealth, "factoryHealth");
 function validateFactoryPreflight(input) {
   if (!input || typeof input !== "object" || Array.isArray(input)) throw new FactoryBridgeError(400, "invalid preflight");
-  const allowed = ["source", "target", "workId", "checkpointId", "ownerDomain", "intent", "scope", "inputRefs", "workPassRef", "workPass", "actingActor", "cityAuthorization", "operation", "expectedSourceSha", "requestedAt"];
+  const allowed = ["source", "target", "workId", "checkpointId", "ownerDomain", "intent", "scope", "inputRefs", "workPassRef", "workPass", "actingActor", "cityAuthorization", "operation", "expectedSourceSha", "requestedAt", "requestText", "requestSha256"];
   if (Object.keys(input).some((k) => !allowed.includes(k))) throw new FactoryBridgeError(400, "unsupported preflight field");
   if (!limitedString(input.workId) || !limitedString(input.checkpointId) || !limitedString(input.workPassRef) || !limitedString(input.intent, 4096))
     throw new FactoryBridgeError(400, "scoped work pass is required");
@@ -236,12 +237,17 @@ function boundedRequest(text) {
 }
 __name(boundedRequest, "boundedRequest");
 async function job(db, taskId) {
-  const row = await statement(db, "SELECT j.*,t.request_text,t.status AS task_status FROM factory_jobs j JOIN tasks t ON t.task_id=j.task_id WHERE j.task_id=?", validId(taskId)).first();
+  const row = await statement(db, "SELECT j.*,t.request_text,t.request_sha256,t.latest_run_id,t.status AS task_status FROM factory_jobs j JOIN tasks t ON t.task_id=j.task_id WHERE j.task_id=?", validId(taskId)).first();
   if (!row) throw new FactoryBridgeError(404, "Factory job not found");
   return row;
 }
 __name(job, "job");
 function envelope(j) {
+  if(j.task_id===L1_TASK_ID){
+    const base=envelope({...j,task_id:'task_'+'0'.repeat(32)});
+    return {...base,workId:L1_TASK_ID,checkpointId:'cp-'+L1_TASK_ID,intent:L1_INTENT,scope:[L1_SCOPE],requestText:j.request_text,requestSha256:j.request_sha256,
+      workPassRef:'work-pass://pantheon-'+L1_TASK_ID,workPass:{...base.workPass,passId:'pantheon-'+L1_TASK_ID,workId:L1_TASK_ID,checkpointId:'cp-'+L1_TASK_ID}};
+  }
   const taskId = validId(j.task_id), cp = "cp-" + taskId;
   return {
     workId: taskId,
@@ -299,7 +305,7 @@ async function queueExistingFactoryJob(db, taskId) {
   if (hash !== original.request_sha256) throw new FactoryBridgeError(409, "request hash mismatch");
   const eligible = `t.status='QUEUED' AND t.latest_run_id IS NULL AND t.last_error IS NULL
     AND t.request_sha256=? AND t.request_text=?
-    AND a.tool_name='factory.logic.trainee' AND a.status='PREPARED'
+    AND (a.tool_name='factory.logic.trainee' OR (t.task_id='${L1_TASK_ID}' AND t.request_sha256='${L1_REQUEST_SHA256}' AND a.tool_name='d1.create_text_artifact')) AND a.status='PREPARED'
     AND a.input_sha256=t.request_sha256 AND a.receipt_sha256 IS NULL
     AND NOT EXISTS(SELECT 1 FROM runs WHERE task_id=t.task_id)
     AND NOT EXISTS(SELECT 1 FROM artifacts WHERE task_id=t.task_id)`;
@@ -323,18 +329,30 @@ async function queueExistingFactoryJob(db, taskId) {
   ]);
   const row = result[2].results[0];
   if (!row) throw new FactoryBridgeError(404, "task not found");
-  if (row.tool_name !== "factory.logic.trainee")
+  if (row.tool_name !== "factory.logic.trainee" && !(taskId===L1_TASK_ID && hash===L1_REQUEST_SHA256 && row.tool_name==="d1.create_text_artifact"))
     throw new FactoryBridgeError(422, "UNSUPPORTED: existing action has no supported Factory mapping; task unchanged");
   if (!row.eligible || row.job_status !== "QUEUED" ||
       [row.receipt_id,row.source_sha,row.result_json,row.result_sha256,row.last_error].some(v => v !== null))
     throw new FactoryBridgeError(409, "Factory task is not eligible for queue; existing state preserved");
   return { task_id: taskId, status: "QUEUED", request_sha256: hash,
     already_queued: result[1].results.length === 0, executed: false,
-    domain: "LOGIC", machine: "DWARF-01", mode: "TRAINING" };
+    domain: "LOGIC", machine: taskId===L1_TASK_ID?"L1_TEXT_ARTIFACT":"DWARF-01", mode: taskId===L1_TASK_ID?"ISOLATED_ARTIFACT":"TRAINING" };
 }
 __name(queueExistingFactoryJob, "queueExistingFactoryJob");
-async function showFactoryJob(db, taskId) {
+async function verifiedL1Job(db,j,env){
+  const action=await statement(db,"SELECT * FROM actions WHERE task_id=?",j.task_id).first();
+  const run=await statement(db,"SELECT * FROM runs WHERE run_id=? AND task_id=?",j.latest_run_id,j.task_id).first();
+  if(j.request_sha256!==L1_REQUEST_SHA256 || await digest(j.request_text)!==L1_REQUEST_SHA256 || j.task_status!=='COMPLETED' || j.receipt_id!==L1_RECEIPT_ID || !j.result_json || await digest(j.result_json)!==j.result_sha256 || action?.status!=='VERIFIED' || action.tool_name!=='d1.create_text_artifact' || action.input_sha256!==L1_REQUEST_SHA256 || action.receipt_sha256!==j.result_sha256 || run?.status!=='COMPLETED')throw new FactoryBridgeError(409,"L1 stored completion evidence mismatch");
+  const back=await factoryReadback(env,L1_RECEIPT_ID);
+  if(!await verifyL1Readback(back) || j.source_sha!==back.sourceSha || await digest(JSON.stringify(back))!==j.result_sha256)throw new FactoryBridgeError(502,"L1 fresh artifact readback verification failed");
+  return back;
+}
+async function showFactoryJob(db, taskId, env) {
   const j = await job(db, taskId);
+  if(taskId===L1_TASK_ID && j.status==='COMPLETED'){
+    const back=await verifiedL1Job(db,j,env);
+    return {...j,result:back,verification_source:'FACTORY_AUTHENTICATED_READBACK',owner_verified:true};
+  }
   const { request_text, receipt_id, status, source_sha, result_json, result_sha256, last_error, updated_at, task_status } = j;
   return {
     task_id: taskId,
@@ -403,7 +421,66 @@ async function settle(db, j, back, receiptId) {
   };
 }
 __name(settle, "settle");
+async function dispatchL1Job(db,env,taskId,reconcile){
+  const j=await job(db,taskId);
+  if(j.request_sha256!==L1_REQUEST_SHA256 || await digest(j.request_text)!==L1_REQUEST_SHA256)throw new FactoryBridgeError(409,"L1 request hash mismatch");
+  if(j.status==='COMPLETED'){const back=await verifiedL1Job(db,j,env);return {task_id:taskId,status:'COMPLETED',verified:true,already_completed:true,receipt_id:L1_RECEIPT_ID,result:back.result};}
+  if(typeof env.FACTORY_PANTHEON_SECRET!=='string'||env.FACTORY_PANTHEON_SECRET.length<32)throw new FactoryBridgeError(503,"isolated Pantheon rail not configured");
+  if(reconcile){
+    if(!['NEEDS_RECONCILIATION','DISPATCHING'].includes(j.status))throw new FactoryBridgeError(409,"L1 reconciliation requires uncertain dispatch");
+  }else if(j.status==='NEEDS_RECONCILIATION'){
+    // Only an explicitly approved dispatch may resume a known-absent effect.
+    // Reconciliation itself remains read-only at Factory. CAS still arbitrates
+    // a delayed original request racing this retry without a second artifact.
+    try{await factoryReadback(env,L1_RECEIPT_ID);return dispatchL1Job(db,env,taskId,true);}
+    catch(error){if(error.message!=='RECEIPT_NOT_FOUND')throw error;}
+    const time=stamp();
+    const claim=await db.batch([
+      statement(db,`UPDATE tasks SET status='RUNNING',last_error=NULL,updated_at=? WHERE task_id=? AND status='NEEDS_RECONCILIATION' AND latest_run_id=? AND request_sha256=? AND request_text=?
+        AND EXISTS(SELECT 1 FROM factory_jobs WHERE task_id=? AND status='NEEDS_RECONCILIATION')
+        AND EXISTS(SELECT 1 FROM actions WHERE task_id=? AND tool_name='d1.create_text_artifact' AND status='REQUESTED' AND input_sha256=?) RETURNING task_id`,time,taskId,j.latest_run_id,L1_REQUEST_SHA256,j.request_text,taskId,taskId,L1_REQUEST_SHA256),
+      statement(db,"UPDATE factory_jobs SET status='DISPATCHING',last_error=NULL,updated_at=? WHERE task_id=? AND changes()=1",time,taskId)
+    ]);
+    if(!claim[0].results.length)throw new FactoryBridgeError(409,"L1 resume already claimed or ineligible");
+  }else{
+    const runId=uid('run'),time=stamp();
+    const claim=await db.batch([
+      statement(db,`UPDATE tasks SET status='RUNNING',latest_run_id=?,updated_at=? WHERE task_id=? AND status='QUEUED' AND latest_run_id IS NULL
+        AND request_sha256=? AND request_text=? AND EXISTS(SELECT 1 FROM factory_jobs WHERE task_id=? AND status='QUEUED')
+        AND EXISTS(SELECT 1 FROM actions WHERE task_id=? AND tool_name='d1.create_text_artifact' AND status='PREPARED' AND input_sha256=? AND receipt_sha256 IS NULL)
+        AND NOT EXISTS(SELECT 1 FROM runs WHERE task_id=?) AND NOT EXISTS(SELECT 1 FROM artifacts WHERE task_id=?) RETURNING task_id`,runId,time,taskId,L1_REQUEST_SHA256,j.request_text,taskId,taskId,L1_REQUEST_SHA256,taskId,taskId),
+      statement(db,"UPDATE factory_jobs SET status='DISPATCHING',updated_at=? WHERE task_id=? AND changes()=1",time,taskId),
+      statement(db,"INSERT INTO runs(run_id,task_id,status,started_at) SELECT ?,?,'RUNNING',? WHERE EXISTS(SELECT 1 FROM tasks WHERE task_id=? AND latest_run_id=?)",runId,taskId,time,taskId,runId),
+      statement(db,"UPDATE actions SET status='REQUESTED' WHERE task_id=? AND EXISTS(SELECT 1 FROM tasks WHERE task_id=? AND latest_run_id=?)",taskId,taskId,runId)
+    ]);
+    if(!claim[0].results.length)throw new FactoryBridgeError(409,"L1 task already claimed or ineligible");
+  }
+  try{
+    const data=envelope(j);
+    if(reconcile)await factoryReconcile(env,data);
+    else {await factoryPreflight(env,data);await factoryDispatch(env,data);}
+    const back=await factoryReadback(env,L1_RECEIPT_ID);
+    if(!await verifyL1Readback(back))throw new FactoryBridgeError(502,"L1 artifact readback verification failed");
+    const time=stamp(),serialized=JSON.stringify(back),hash=await digest(serialized);
+    await db.batch([
+      statement(db,"UPDATE factory_jobs SET status='COMPLETED',receipt_id=?,source_sha=?,result_json=?,result_sha256=?,last_error=NULL,updated_at=? WHERE task_id=? AND status IN ('DISPATCHING','NEEDS_RECONCILIATION')",L1_RECEIPT_ID,back.sourceSha,serialized,hash,time,taskId),
+      statement(db,"INSERT INTO events(event_id,task_id,type,actor,details_json,created_at) SELECT ?,?,'FACTORY_L1_VERIFIED','pantheon-factory',?,? WHERE changes()=1",uid('evt'),taskId,JSON.stringify({receipt_id:L1_RECEIPT_ID,artifact_sha256:back.result.contentSha256}),time),
+      statement(db,"UPDATE tasks SET status='COMPLETED',last_error=NULL,updated_at=? WHERE task_id=?",time,taskId),
+      statement(db,"UPDATE actions SET status='VERIFIED',receipt_sha256=? WHERE task_id=?",hash,taskId),
+      statement(db,"UPDATE runs SET status='COMPLETED',finished_at=? WHERE run_id=(SELECT latest_run_id FROM tasks WHERE task_id=?)",time,taskId)
+    ]);
+    return {task_id:taskId,status:'COMPLETED',verified:true,receipt_id:L1_RECEIPT_ID,result:back.result,readback_sha256:hash};
+  }catch(error){
+    const reason=String(error.message||'L1_EFFECT_UNCERTAIN').slice(0,240),time=stamp();
+    await db.batch([
+      statement(db,"UPDATE factory_jobs SET status='NEEDS_RECONCILIATION',last_error=?,updated_at=? WHERE task_id=? AND status!='COMPLETED'",reason,time,taskId),
+      statement(db,"UPDATE tasks SET status='NEEDS_RECONCILIATION',last_error=?,updated_at=? WHERE task_id=? AND status!='COMPLETED'",reason,time,taskId)
+    ]);
+    throw new FactoryBridgeError(409,"L1 effect uncertain; reconcile exact task before any retry");
+  }
+}
 async function dispatchFactoryJob(db, env, taskId, { reconcile = false } = {}) {
+  if(taskId===L1_TASK_ID)return dispatchL1Job(db,env,taskId,reconcile);
   if (typeof env.FACTORY_PANTHEON_SECRET !== "string" || env.FACTORY_PANTHEON_SECRET.length < 32)
     throw new FactoryBridgeError(503, "isolated Pantheon rail not configured");
   const j = await job(db, taskId);
@@ -571,6 +648,7 @@ async function markComplete(db, taskId, runId, digest2, recovered = false) {
 }
 __name(markComplete, "markComplete");
 async function runTask(db, taskId) {
+  if(taskId===L1_TASK_ID)throw new ApiError(409,"exact L1 task requires Factory executor");
   const task = await getTask(db, taskId), runId = id("run"), timestamp = now();
   const executor = await stmt(db, "SELECT tool_name FROM actions WHERE task_id=?", taskId).first();
   if (executor?.tool_name !== "d1.create_text_artifact") throw new ApiError(409, "task requires Factory executor");
@@ -608,6 +686,7 @@ async function runTask(db, taskId) {
 }
 __name(runTask, "runTask");
 async function recover(db, taskId) {
+  if(taskId===L1_TASK_ID)throw new ApiError(409,"exact L1 task requires Factory reconciliation");
   const task = await getTask(db, taskId);
   const executor = await stmt(db, "SELECT tool_name FROM actions WHERE task_id=?", taskId).first();
   if (executor?.tool_name !== "d1.create_text_artifact") throw new ApiError(409, "task requires Factory reconciliation");
@@ -632,6 +711,7 @@ async function recover(db, taskId) {
 }
 __name(recover, "recover");
 async function retry(db, taskId) {
+  if(taskId===L1_TASK_ID)throw new ApiError(409,"exact L1 task requires Factory reconciliation");
   const task = await getTask(db, taskId);
   const executor = await stmt(db, "SELECT tool_name FROM actions WHERE task_id=?", taskId).first();
   if (executor?.tool_name !== "d1.create_text_artifact") throw new ApiError(409, "task requires Factory reconciliation");
@@ -666,7 +746,7 @@ var worker_default = {
       const jobPath = path.match(/^\/v1\/factory\/jobs\/(task_[a-f0-9]{32})(?:\/(dispatch|reconcile))?$/);
       if (jobPath) {
         const [, taskId, action] = jobPath;
-        if (!action && request.method === "GET") return reply({ job: await showFactoryJob(env.DB, taskId) });
+        if (!action && request.method === "GET") return reply({ job: await showFactoryJob(env.DB, taskId, env) });
         if (action === "dispatch" && request.method === "POST") return reply(await dispatchFactoryJob(env.DB, env, taskId));
         if (action === "reconcile" && request.method === "POST") return reply(await dispatchFactoryJob(env.DB, env, taskId, { reconcile: true }));
         throw new ApiError(405, "method not allowed");
