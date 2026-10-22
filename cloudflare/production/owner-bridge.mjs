@@ -24,6 +24,10 @@ export async function ownerBridgeCall(env,workhub,a){
   else return fail('UNSUPPORTED_INTENT');
   break;
  case 'queue_factory':
+  if(Object.hasOwn(a,'task_id')){
+   if(!keys(a,['operation','task_id'])||!task(a.task_id))return fail('INVALID_TASK_ID');
+   path='/v1/factory/jobs';payload={task_id:a.task_id};break;
+  }
   if(!keys(a,['operation','request'])||typeof a.request!=='string'||!a.request.trim()||a.request.length>4000)return fail('INVALID_REQUEST');
   path='/v1/factory/jobs';payload={request:a.request};break;
  case 'factory_health':
