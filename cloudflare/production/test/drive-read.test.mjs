@@ -116,3 +116,17 @@ test("PANTHEON returns namespaced read and write capability labels",async()=>{
   assert.equal(w.capability,"pantheon.drive.write");assert.equal(w.ok,true);
 });
 
+
+test("Workers-compatible OAuth uses manual redirect, never follows credential-bearing redirects",async()=>{
+  let stage;
+  const response=await runDriveTool("light_drive_roots",{},env,async(url,opts)=>{
+    stage=url;
+    assert.equal(opts.redirect,"manual");
+    return new Response("redirect blocked",{status:302,headers:{location:"https://untrusted.example/"}});
+  });
+  assert.equal(stage,"https://oauth2.googleapis.com/token");
+  assert.equal(response.status,"UPSTREAM_HTTP_302");
+  assert.equal(response.upstream_stage,"oauth_token");
+  assert.equal(response.upstream_failure,"http");
+  assert.doesNotMatch(JSON.stringify(response),/untrusted.example|redirect blocked/);
+});

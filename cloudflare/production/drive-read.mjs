@@ -32,7 +32,7 @@ async function readApi(url,options,fetcher){
   const unavailable=(error,phase)=>diagnostic("UPSTREAM_UNAVAILABLE",phase,
     signal.aborted||error?.name==="TimeoutError"?"timeout":"network");
   let res;
-  try{res=await fetcher(url,{...options,redirect:"error",signal});}
+  try{res=await fetcher(url,{...options,redirect:"manual",signal});}
   catch(error){throw unavailable(error,"fetch");}
   if(!res.ok)throw diagnostic("UPSTREAM_HTTP_"+res.status,"fetch","http");
   try{return await readLimited(res);}
