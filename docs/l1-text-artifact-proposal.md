@@ -1,9 +1,15 @@
-# Proposed deployment-free L1 text-artifact capability (not implemented)
+# Approved exact-task L1 implementation
 
-The exact L1 acceptance task cannot be represented by the current PANTHEON Factory envelope, which hardcodes LOGIC trainee placement. CODE's deployment step is also outside the task scope. Machine READY does not resolve this mismatch. The queue-contract fix must return UNSUPPORTED for the ordinary text-artifact action, leaving the original task untouched.
+The owner approved the bounded capability on 2026-10-22. The paired Factory candidate implements CREATE_L1_TEXT_ARTIFACT / EXECUTE:TEXT_ARTIFACT:L1 exclusively for task_d6c9e93a42fd4f339bb47d941428dd08 and request hash de0038fe8be999fe6a1c725156cd9684ac4887127ef783a659148ccdf36d0b24. There is no generic execution or LOGIC trainee substitution.
 
-A separate owner-reviewed design could add a narrowly scoped Factory artifact operation that only writes deterministic UTF-8 text to an isolated artifact store. The content would bind the existing task ID, `YGG FACTORY L1 PASS`, and a single persisted test timestamp. Store a digest, receipt, and correlated owner readback. Retried/concurrent execution must reuse the same checkpoint and timestamp, verify existing content, and never generate another task or overwrite an uncertain effect.
+This worker statically binds that exact task/hash to the new Factory intent, preserving the existing task/action and request. No schema migration, credentials, account permissions, Drive integration or new task creation is required. Local run/recover/retry cannot execute the reserved task. D1 atomically claims dispatch; Factory atomically stores its artifact and receipt in one immutable existing-private-R2 record. Only verified authenticated readback of actual content can complete the task. Owner GET requires fresh Factory readback; a stored receipt alone is insufficient.
 
-Before implementation, decide the exact machine/operation, authority representation, storage and retention, receipt schema, and how a previously authorized task is explicitly bound to this operation without rewriting its original request or hash. Preserve the prohibitions on customer data, external communication, publishing, payments and production application changes. A minimal capability must have no deployment step, shell/network escape or LOGIC substitution. Fail BLOCKED/UNSUPPORTED if any required authority or machine is absent.
+Failure before the Factory record exists leaves NEEDS_RECONCILIATION. Reconcile is read-only; a subsequent explicitly approved dispatch can resume after authenticated RECEIPT_NOT_FOUND. A late original request and the retry still share one conditional-create key, so only one artifact can persist. Successful retries reuse the winning timestamp and bytes. No evidence is deleted or overwritten.
 
-This is a proposal only: no runner, permission, Work Authority, credential, schema or Factory changes are included. Implementing and releasing such a capability requires separate approval. The existing local D1 text-artifact executor is not proof of delivery to or execution by Factory.
+Release is parent-controlled: Factory first, PANTHEON second, GO caller last. No production execution is established by local tests or PR CI. The tiny artifact stays in the existing private Factory store; later Drive archival is separate.
+
+Run cross-repository local integration after checking out all candidates:
+
+    GO_CHECKOUT=/path/to/Go-Together FACTORY_CHECKOUT=/path/to/Factory-District node --test cloudflare/tests/l1-chain.integration.mjs
+
+This exercises the actual three worker modules with in-memory D1/R2. It is separate from repository CI, which runs the local contract/lifecycle suites without fetching private sibling checkouts.
