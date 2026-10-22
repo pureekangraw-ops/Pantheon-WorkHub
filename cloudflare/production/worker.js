@@ -290,6 +290,49 @@ async function queueFactoryJob(db, request) {
   return { task_id: taskId, status: "QUEUED", executed: false, domain: "LOGIC", machine: "DWARF-01", mode: "TRAINING" };
 }
 __name(queueFactoryJob, "queueFactoryJob");
+// An existing action is the scope declaration: never infer Factory authority from prose.
+async function queueExistingFactoryJob(db, taskId) {
+  validId(taskId);
+  const original = await statement(db, "SELECT * FROM tasks WHERE task_id=?", taskId).first();
+  if (!original) throw new FactoryBridgeError(404, "task not found");
+  const hash = await digest(original.request_text);
+  if (hash !== original.request_sha256) throw new FactoryBridgeError(409, "request hash mismatch");
+  const eligible = `t.status='QUEUED' AND t.latest_run_id IS NULL AND t.last_error IS NULL
+    AND t.request_sha256=? AND t.request_text=?
+    AND a.tool_name='factory.logic.trainee' AND a.status='PREPARED'
+    AND a.input_sha256=t.request_sha256 AND a.receipt_sha256 IS NULL
+    AND NOT EXISTS(SELECT 1 FROM runs WHERE task_id=t.task_id)
+    AND NOT EXISTS(SELECT 1 FROM artifacts WHERE task_id=t.task_id)`;
+  const time = stamp();
+  // D1 batch is transactional. Conditional insert + primary key arbitrate concurrent
+  // callers; changes() ties the audit to this insert, never to a prior queue attempt.
+  // Final read is in the same transaction so dispatch cannot race the response snapshot.
+  const result = await db.batch([
+    statement(db, `INSERT INTO factory_jobs(task_id,status,updated_at)
+      SELECT t.task_id,'QUEUED',? FROM tasks t JOIN actions a ON a.task_id=t.task_id
+      WHERE t.task_id=? AND ${eligible}
+      ON CONFLICT(task_id) DO NOTHING`, time, taskId, hash, original.request_text),
+    statement(db, `INSERT INTO events(event_id,task_id,type,actor,details_json,created_at)
+      SELECT ?,?,'FACTORY_TASK_QUEUED','cloud-owner',?,? WHERE changes()=1
+      RETURNING event_id`, uid("evt"), taskId, JSON.stringify({ input_sha256: hash }), time),
+    statement(db, `SELECT t.task_id,a.tool_name,j.status AS job_status,
+      j.receipt_id,j.source_sha,j.result_json,j.result_sha256,j.last_error,
+      (${eligible}) AS eligible
+      FROM tasks t LEFT JOIN actions a ON a.task_id=t.task_id
+      LEFT JOIN factory_jobs j ON j.task_id=t.task_id WHERE t.task_id=?`, hash, original.request_text, taskId)
+  ]);
+  const row = result[2].results[0];
+  if (!row) throw new FactoryBridgeError(404, "task not found");
+  if (row.tool_name !== "factory.logic.trainee")
+    throw new FactoryBridgeError(422, "UNSUPPORTED: existing action has no supported Factory mapping; task unchanged");
+  if (!row.eligible || row.job_status !== "QUEUED" ||
+      [row.receipt_id,row.source_sha,row.result_json,row.result_sha256,row.last_error].some(v => v !== null))
+    throw new FactoryBridgeError(409, "Factory task is not eligible for queue; existing state preserved");
+  return { task_id: taskId, status: "QUEUED", request_sha256: hash,
+    already_queued: result[1].results.length === 0, executed: false,
+    domain: "LOGIC", machine: "DWARF-01", mode: "TRAINING" };
+}
+__name(queueExistingFactoryJob, "queueExistingFactoryJob");
 async function showFactoryJob(db, taskId) {
   const j = await job(db, taskId);
   const { request_text, receipt_id, status, source_sha, result_json, result_sha256, last_error, updated_at, task_status } = j;
@@ -613,6 +656,10 @@ var worker_default = {
       if (path === "/v1/factory/preflight" && request.method === "POST") return reply({ factory: await factoryPreflight(env, await bodyJson(request)) });
       if (path === "/v1/factory/jobs" && request.method === "POST") {
         const body = await bodyJson(request);
+        if (body && Object.hasOwn(body, "task_id")) {
+          requireObject(body, ["task_id"]);
+          return reply(await queueExistingFactoryJob(env.DB, body.task_id));
+        }
         requireObject(body, ["request"]);
         return reply(await queueFactoryJob(env.DB, body.request), 201);
       }

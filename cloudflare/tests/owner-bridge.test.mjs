@@ -57,7 +57,8 @@ test('round bridge rejects injected parameters and public anonymous reads',async
 });
 function setup(){
  const sql=new DatabaseSync(':memory:');sql.exec(readFileSync(new URL('../production/test-schema.sql',import.meta.url),'utf8'));
- const DB={prepare(query){const s=sql.prepare(query);let a=[];return {bind(...v){a=v;return this;},async first(){return s.get(...a)||null;},async all(){return {results:s.all(...a)};},async run(){return {meta:{changes:Number(s.run(...a).changes)}};}};},async batch(statements){sql.exec('BEGIN');try{const out=[];for(const s of statements)out.push(await s.all());sql.exec('COMMIT');return out;}catch(e){sql.exec('ROLLBACK');throw e;}}};
+ let tail=Promise.resolve();
+ const DB={prepare(query){const s=sql.prepare(query);let a=[];return {bind(...v){a=v;return this;},async first(){return s.get(...a)||null;},async all(){return {results:s.all(...a)};},async run(){return {meta:{changes:Number(s.run(...a).changes)}};}};},batch(statements){const run=async()=>{sql.exec('BEGIN');try{const out=[];for(const s of statements)out.push(await s.all());sql.exec('COMMIT');return out;}catch(e){sql.exec('ROLLBACK');throw e;}};const result=tail.then(run);tail=result.catch(()=>{});return result;}};
  return {sql,env:{DB,WORKHUB_TOKEN:'test-only-owner-token-'.repeat(2)}};
 }
 test('internal bridge queues then reads real task without caller token',async()=>{
@@ -96,4 +97,105 @@ test('public HTTP still denies anonymous intent after adding internal bridge',as
 test('receiver without owner secret fails closed',async()=>{
  const r=await ownerBridgeCall({},workhub,{operation:'intent',payload:{intent:'LIST_TASKS'}});
  assert.equal(r.ok,false);assert.equal(r.status,'UPSTREAM_AUTH_NOT_CONFIGURED');
+});
+
+const queueExisting=(env,task_id)=>ownerBridgeCall(env,workhub,{operation:'queue_factory',task_id});
+const snapshot=sql=>JSON.stringify(['tasks','actions','factory_jobs','events','runs','artifacts'].map(t=>sql.prepare('SELECT * FROM '+t).all()));
+async function factoryFixture(){
+ const s=setup();s.calls=0;s.env.FACTORY={fetch(){s.calls++;throw Error('queue must never call Factory');}};
+ const r=await ownerBridgeCall(s.env,workhub,{operation:'queue_factory',request:'synthetic LOGIC training'});
+ s.task_id=r.result.task_id;return s;
+}
+test('existing Factory task queue is idempotent without changing checkpoints or dispatching',async()=>{
+ const s=await factoryFixture();const before=snapshot(s.sql);
+ const results=await Promise.all(Array.from({length:8},()=>queueExisting(s.env,s.task_id)));
+ for(const r of results){assert.equal(r.ok,true);assert.equal(r.result.task_id,s.task_id);assert.equal(r.result.executed,false);assert.equal(r.result.already_queued,true);}
+ assert.equal(snapshot(s.sql),before);assert.equal(s.calls,0);s.sql.close();
+});
+test('eligible prepared action can atomically acquire exactly one queue record',async()=>{
+ const s=await factoryFixture();s.sql.prepare('DELETE FROM factory_jobs').run();s.sql.prepare('DELETE FROM events').run();
+ const task=s.sql.prepare('SELECT * FROM tasks').get(),action=s.sql.prepare('SELECT * FROM actions').get();
+ const results=await Promise.all(Array.from({length:8},()=>queueExisting(s.env,s.task_id)));
+ for(const r of results)assert.equal(r.ok,true);
+ assert.equal(results.filter(r=>!r.result.already_queued).length,1);
+ assert.equal(s.sql.prepare('SELECT count(*) n FROM factory_jobs').get().n,1);
+ assert.equal(s.sql.prepare('SELECT count(*) n FROM events').get().n,1);
+ assert.deepEqual(s.sql.prepare('SELECT * FROM tasks').get(),task);assert.deepEqual(s.sql.prepare('SELECT * FROM actions').get(),action);
+ assert.equal(s.calls,0);s.sql.close();
+});
+test('ordinary text-artifact task is UNSUPPORTED without substitution or duplicate',async()=>{
+ const s=setup();const c=await ownerBridgeCall(s.env,workhub,{operation:'intent',payload:{intent:'CREATE_TASK',request:'synthetic YGG FACTORY L1 PASS text artifact; no trainee placement'}});
+ const before=snapshot(s.sql);
+ const results=await Promise.all(Array.from({length:8},()=>queueExisting(s.env,c.result.task_id)));
+ for(const r of results){assert.equal(r.ok,false);assert.equal(r.upstream_status,422);assert.match(r.result.error,/UNSUPPORTED/);}
+ assert.equal(snapshot(s.sql),before);s.sql.close();
+});
+test('queue rejects ambiguous, unknown, unauthorized and malformed calls without mutation',async()=>{
+ const s=await factoryFixture();const before=snapshot(s.sql);
+ for(const args of [{task_id:s.task_id,request:'ambiguous'},{task_id:'invalid'},{}]){
+  const r=await ownerBridgeCall(s.env,workhub,{operation:'queue_factory',...args});assert.equal(r.ok,false);
+ }
+ assert.equal((await queueExisting(s.env,'task_'+'0'.repeat(32))).upstream_status,404);
+ for(const body of [{task_id:s.task_id,request:'ambiguous'},{task_id:'invalid'},{}]){
+  const r=await workhub.fetch(new Request('https://test/v1/factory/jobs',{method:'POST',headers:{authorization:'Bearer '+s.env.WORKHUB_TOKEN},body:JSON.stringify(body)}),s.env);assert.equal(r.status,400);
+ }
+ const denied=await workhub.fetch(new Request('https://test/v1/factory/jobs',{method:'POST',body:JSON.stringify({task_id:s.task_id})}),s.env);assert.equal(denied.status,401);
+ assert.equal(snapshot(s.sql),before);assert.equal(s.calls,0);s.sql.close();
+});
+test('queue never resets dispatched, completed, uncertain or inconsistent state',async()=>{
+ for(const mutation of [
+  "UPDATE factory_jobs SET status='DISPATCHING'", "UPDATE factory_jobs SET status='COMPLETED'", "UPDATE factory_jobs SET status='NEEDS_RECONCILIATION'",
+  "UPDATE tasks SET status='RUNNING'", "UPDATE tasks SET status='COMPLETED'", "UPDATE tasks SET status='FAILED'", "UPDATE tasks SET status='NEEDS_RECONCILIATION'",
+  "UPDATE tasks SET latest_run_id='run_prior'", "UPDATE actions SET status='REQUESTED'", "UPDATE actions SET receipt_sha256='prior'",
+  "UPDATE actions SET input_sha256='mismatch'", "UPDATE tasks SET request_text='tampered'", "UPDATE factory_jobs SET receipt_id='receipt-prior'",
+  "INSERT INTO runs(run_id,task_id,status,started_at) SELECT 'run_prior',task_id,'NO_EFFECT',created_at FROM tasks",
+  "INSERT INTO artifacts SELECT action_key,task_id,'prior','prior','now' FROM actions"
+ ]){
+  const s=await factoryFixture();s.sql.exec(mutation);const before=snapshot(s.sql);
+  const r=await queueExisting(s.env,s.task_id);assert.equal(r.ok,false,mutation);assert.equal(r.upstream_status,409,mutation);
+  assert.equal(snapshot(s.sql),before);assert.equal(s.calls,0);s.sql.close();
+ }
+});
+test('failed queue audit rolls back insertion atomically',async()=>{
+ const s=await factoryFixture();s.sql.exec("DELETE FROM factory_jobs; DELETE FROM events; CREATE TRIGGER fail_audit BEFORE INSERT ON events BEGIN SELECT RAISE(ABORT,'synthetic audit failure'); END;");
+ const before=snapshot(s.sql),r=await queueExisting(s.env,s.task_id);
+ assert.equal(r.ok,false);assert.equal(snapshot(s.sql),before);assert.equal(s.calls,0);s.sql.close();
+});
+test('state changes between initial read and transaction fail closed',async()=>{
+ for(const mutation of ["UPDATE tasks SET status='RUNNING'", "UPDATE actions SET tool_name='d1.create_text_artifact'", "UPDATE tasks SET request_text='changed'", "UPDATE factory_jobs SET status='DISPATCHING'"]){
+  const s=await factoryFixture();const batch=s.env.DB.batch.bind(s.env.DB);let before;
+  s.env.DB.batch=statements=>{s.sql.exec(mutation);before=snapshot(s.sql);return batch(statements);};
+  const r=await queueExisting(s.env,s.task_id);assert.equal(r.ok,false,mutation);
+  assert.equal(snapshot(s.sql),before);assert.equal(s.calls,0);s.sql.close();
+ }
+});
+test('existing-task API authenticates before disclosing task existence',async()=>{
+ const s=await factoryFixture();const before=snapshot(s.sql);let reads=0;
+ const DB={prepare(){reads++;throw Error('must authenticate before database lookup');}};
+ const errors=[];
+ for(const task_id of [s.task_id,'task_'+'0'.repeat(32)]){
+  for(const authorization of ['', 'Bearer invalid']){
+   const r=await workhub.fetch(new Request('https://test/v1/factory/jobs',{method:'POST',headers:{authorization},body:JSON.stringify({task_id})}),{...s.env,DB});
+   assert.equal(r.status,401);errors.push(await r.text());
+  }
+ }
+ assert.equal(new Set(errors).size,1);assert.equal(reads,0);assert.equal(snapshot(s.sql),before);s.sql.close();
+});
+test('LOCAL FIXTURE ONLY: exact recorded L1 request/hash is UNSUPPORTED without writes',async()=>{
+ const fixture=JSON.parse(readFileSync(new URL('./fixtures/l1-task-local.json',import.meta.url),'utf8'));
+ assert.equal(fixture.evidence_kind,'LOCAL_FIXTURE_FROM_PARENT_READBACK_NOT_LIVE_EXECUTION');
+ const hash=Buffer.from(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(fixture.recorded_request_text))).toString('hex');
+ assert.equal(hash,fixture.recorded_request_sha256);
+ const s=setup(),task_id=fixture.task_id;let calls=0;
+ s.env.FACTORY={fetch(){calls++;throw Error('must never call Factory');}};
+ s.sql.prepare('INSERT INTO tasks(task_id,status,request_text,request_sha256,created_at,updated_at) VALUES(?,?,?,?,?,?)').run(task_id,fixture.recorded_status,fixture.recorded_request_text,hash,'local-fixture','local-fixture');
+ s.sql.prepare("INSERT INTO actions(action_key,task_id,tool_name,input_sha256,status) VALUES(?,?,'d1.create_text_artifact',?,'PREPARED')").run('act_local_l1',task_id,hash);
+ const before=snapshot(s.sql);
+ const results=await Promise.all(Array.from({length:8},()=>queueExisting(s.env,task_id)));
+ for(const r of results){assert.equal(r.ok,false);assert.equal(r.upstream_status,422);assert.match(r.result.error,/UNSUPPORTED/);}
+ assert.equal(snapshot(s.sql),before);assert.equal(calls,0);
+ assert.equal(s.sql.prepare('SELECT latest_run_id FROM tasks').get().latest_run_id,fixture.recorded_latest_run_id);
+ s.sql.prepare("UPDATE tasks SET request_text=request_text || 'tampered'").run();
+ const changed=snapshot(s.sql),r=await queueExisting(s.env,task_id);
+ assert.equal(r.upstream_status,409);assert.match(r.result.error,/hash mismatch/);assert.equal(snapshot(s.sql),changed);s.sql.close();
 });
