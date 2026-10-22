@@ -21,3 +21,14 @@ jobs:
         with:
           node-version: "24"
       - run: node --test --test-isolation=none cloudflare/staging/observatory.test.mjs cloudflare/tests/*.test.mjs cloudflare/production/test/*.test.mjs
+      - name: Check out paired GO caller for local contract chain
+        uses: actions/checkout@v4
+        with:
+          repository: pureekangraw-ops/Go-Together
+          ref: c6ea2ede236a6650a265836a1c49ce473c9cb8f9
+          path: go-fixture-source
+          persist-credentials: false
+      - name: Verify local outcome chain without Factory effects
+        env:
+          GO_CHECKOUT: ${{ github.workspace }}/go-fixture-source
+        run: node --test cloudflare/tests/intent-chain.integration.mjs
