@@ -1,3 +1,4 @@
+import {INTENT_CONTRACTS,validateIntent,validateOutcome,proposeOutcome,validateProposal} from './intent-contract.mjs';
 import {L1_TASK_ID,L1_REQUEST_SHA256,L1_INTENT,L1_SCOPE,L1_RECEIPT_ID,verifyL1Readback} from './l1-contract.mjs';
 import { handleObservatory } from "./observatory-router.mjs";
 import { scheduledObservatoryCleanup } from "./observatory-schema.mjs";
@@ -594,24 +595,46 @@ function validId2(v) {
 }
 __name(validId2, "validId");
 function parseIntent(value) {
-  if (!value || typeof value !== "object" || Array.isArray(value)) throw new ApiError(400, "invalid intent");
-  switch (value.intent) {
-    case "CREATE_TASK":
-      requireObject(value, ["intent", "request"]);
-      if (typeof value.request !== "string" || !value.request.trim() || value.request.length > 4096) throw new ApiError(400, "invalid request");
-      return value;
-    case "SHOW_TASK":
-      requireObject(value, ["intent", "task_id"]);
-      validId2(value.task_id);
-      return value;
-    case "LIST_TASKS":
-      requireObject(value, ["intent"]);
-      return value;
-    default:
-      throw new ApiError(400, "unsupported intent");
-  }
+  return validateIntent(value, message => new ApiError(400, message));
 }
 __name(parseIntent, "parseIntent");
+// Outcome routing is authenticated by the same owner boundary as explicit intents.
+// It may read or propose a plan; it cannot grant, prepare, run or dispatch writes.
+async function routeOutcome(db, input) {
+  validateOutcome(input, message => new ApiError(400, message));
+  const original = input.task_id ? await getTask(db, input.task_id) : null;
+  if (original && await sha256(original.request_text) !== original.request_sha256)
+    throw new ApiError(409, "request hash mismatch");
+  const identity = {request:input.request, task_id:original?.task_id ?? null,
+    original_request:original?.request_text ?? input.request,
+    request_sha256:original?.request_sha256 ?? await sha256(input.request)};
+  const proposal = validateProposal(proposeOutcome(input), parseIntent);
+  const base = {...identity, plan_id:await sha256(JSON.stringify(identity)),
+    executed:false, completed:false, verified:false, authorization:'OWNER_READ_OR_PLAN_ONLY'};
+  if (proposal.status === 'DISCOVERY') return {...base,...proposal,
+    capabilities:Object.entries(INTENT_CONTRACTS).map(([intent,c]) => ({intent,...c,dispatch_enabled:false})),
+    factory:{connectivity:'NOT_CHECKED',executable_for_this_request:false,
+      domains:['build a click-counter website','render a static card','place a LOGIC trainee'].map(request => proposeOutcome({request})),
+      note:'Factory owns runner registration. Health READY is registration, not job execution or caller authority. Exact L1 remains task-bound.'}};
+  if (!proposal.action) return {...base,...proposal};
+  const {action,contract} = proposal;
+  if ((action.intent === 'SHOW_TASK' && action.task_id !== original?.task_id) ||
+      (action.intent === 'CREATE_TASK' && action.request !== input.request))
+    throw new ApiError(409, 'proposal identity mismatch');
+  if (contract.effect !== 'read') {
+    // Never bind a new action to an existing task or relabel its declared tool.
+    if (original) return {...base,status:'UNSUPPORTED',reason:'EXISTING_TASK_ACTION_IMMUTABLE'};
+    return {...base,status:'PLANNED',action,capability:contract.tool,
+      reason:'EXPLICIT_PREPARATION_REQUIRED',dispatch_enabled:false,
+      boundary:'Existing CREATE_TASK prepares only a D1 text artifact; run and readback remain separate. No Factory work.'};
+  }
+  const result = action.intent === 'SHOW_TASK' ? {task:original} :
+    {tasks:(await stmt(db, "SELECT t.task_id,t.status,t.request_text,t.created_at,t.updated_at,a.tool_name FROM tasks t JOIN actions a ON a.task_id=t.task_id ORDER BY t.created_at DESC LIMIT 100").all()).results};
+  // Reading a COMPLETED task is not verification of the requested artifact.
+  return {...base,status:'READ',capability:contract.tool,result,
+    evidence:{kind:'D1_TASK_READ',task_id:original?.task_id ?? null},
+    verification:'TASK_METADATA_ONLY_NOT_ARTIFACT_READBACK'};
+}
 async function queue(db, request) {
   const taskId = id("task"), actionKey = id("act"), timestamp = now(), digest2 = await sha256(request);
   await db.batch([
@@ -752,7 +775,9 @@ var worker_default = {
         throw new ApiError(405, "method not allowed");
       }
       if (path === "/v1/intent" && request.method === "POST") {
-        const intent = parseIntent(await bodyJson(request));
+        const body = await bodyJson(request);
+        if (body && !Object.hasOwn(body, "intent")) return reply(await routeOutcome(env.DB, body));
+        const intent = parseIntent(body);
         if (intent.intent === "CREATE_TASK") return reply(await queue(env.DB, intent.request), 201);
         if (intent.intent === "SHOW_TASK") return reply({ task: await getTask(env.DB, intent.task_id) });
         return reply({ tasks: (await stmt(env.DB, "SELECT t.task_id,t.status,t.request_text,t.created_at,t.updated_at,a.tool_name FROM tasks t JOIN actions a ON a.task_id=t.task_id ORDER BY t.created_at DESC LIMIT 100").all()).results });
@@ -793,6 +818,7 @@ export {
   worker_default as default,
   inspect,
   parseIntent,
+  routeOutcome,
   queue,
   recover,
   retry,
