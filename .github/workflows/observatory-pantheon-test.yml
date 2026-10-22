@@ -20,4 +20,4 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
-      - run: node --test --test-isolation=none cloudflare/staging/observatory.test.mjs cloudflare/tests/*.test.mjs
+      - run: node --test --test-isolation=none cloudflare/staging/observatory.test.mjs cloudflare/tests/*.test.mjs cloudflare/production/test/*.test.mjs

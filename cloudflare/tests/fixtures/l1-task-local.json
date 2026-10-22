@@ -1,10 +1,9 @@
 {
-  "evidence_kind": "LOCAL_SYNTHETIC_FIXTURE_NOT_LIVE_READBACK",
+  "evidence_kind": "LOCAL_FIXTURE_FROM_PARENT_READBACK_NOT_LIVE_EXECUTION",
   "task_id": "task_d6c9e93a42fd4f339bb47d941428dd08",
   "recorded_status": "QUEUED",
   "recorded_latest_run_id": null,
   "recorded_request_sha256": "de0038fe8be999fe6a1c725156cd9684ac4887127ef783a659148ccdf36d0b24",
-  "recorded_request_text": null,
-  "limitation": "The parent supplied a request summary, not the complete recorded request bytes. Do not represent the synthetic request below as the original or its hash as the recorded hash.",
-  "synthetic_request_text": "LOCAL SYNTHETIC FIXTURE: Create a safe isolated deterministic text artifact containing YGG FACTORY L1 PASS, task identity, and test timestamp, with digest, receipt, and owner readback. No customer data, public publishing, production application changes, payments, external communication, or LOGIC trainee substitution. Return UNSUPPORTED or BLOCKED if the exact artifact lacks a supported machine or authority."
+  "recorded_request_text": "FACTORY ACCEPTANCE TEST L1 — safe isolated artifact test only. Goal: produce a small deterministic text artifact containing exactly 'YGG FACTORY L1 PASS', Work/task identity and test timestamp; return source artifact reference, content digest, receipt and owner readback if supported. No customer data, no public publishing, no production application changes, no payment, no external communication. If no supported machine/authority for this exact artifact, fail closed with UNSUPPORTED or BLOCKED rather than substituting a LOGIC trainee placement or fabricating a receipt. This is a graded acceptance test; separate task creation from execution.",
+  "limitation": "Exact request bytes and recorded identity/hash supplied by parent read-only evidence. This local SQLite fixture is not a live queue, execution, receipt, artifact, or owner readback."
 }
