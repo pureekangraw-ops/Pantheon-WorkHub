@@ -1,0 +1,8 @@
+{
+  "name": "pantheon-shop-sandbox-bridge",
+  "main": "entrypoint.mjs",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": false,
+  "preview_urls": false,
+  "services": [{"binding":"SHOP_COMMERCE_READ","service":"yggmetro-shop-sandbox","entrypoint":"ShopCommerceRead"}]
+}
